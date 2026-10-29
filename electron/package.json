@@ -1,0 +1,40 @@
+{
+  "name": "bk-security-desktop",
+  "version": "1.0.0",
+  "description": "BK Security desktop SOC",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "test": "node test/run.js",
+    "dist:win": "electron-builder --config electron-builder.config.js --win nsis"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.17.0"
+  },
+  "build": {
+    "appId": "com.bkentreprise.bksecurity",
+    "productName": "BK Security",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "requestedExecutionLevel": "requireAdministrator"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "BK Security",
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "author": "BK ENTREPRISE"
+}

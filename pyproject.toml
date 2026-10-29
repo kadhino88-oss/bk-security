@@ -1,0 +1,26 @@
+[project]
+name = "bk-security-core"
+version = "1.0.0"
+description = "BK Security detection and AI orchestration core"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.30,<1",
+  "psutil>=6,<8",
+  "scapy>=2.5,<3",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+build = ["pyinstaller>=6.10,<7"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["bk_security*"]

@@ -1,0 +1,2247 @@
+# BK SECURITY V1
+## Architecture complète — Cahier technique de réalisation
+
+### 1. OBJECTIF DU PROJET
+
+Construire **BK Security**, plateforme de cybersécurité professionnelle développée par **BK ENTREPRISE**, intégrée à l’écosystème **BK-AI-WORKERS**.
+
+BK Security doit être une plateforme de :
+
+- surveillance réseau ;
+- surveillance endpoint ;
+- analyse LAN ;
+- détection d'anomalies ;
+- détection comportementale ;
+- corrélation multi-signaux ;
+- Threat Intelligence ;
+- mapping MITRE ATT&CK ;
+- analyse des processus ;
+- analyse DNS ;
+- analyse des connexions réseau ;
+- gestion des alertes ;
+- gestion des incidents ;
+- investigation assistée par IA ;
+- forensic ;
+- génération de rapports ;
+- réponse aux incidents ;
+- audit et traçabilité ;
+- supervision SOC en temps réel.
+
+Le produit doit fonctionner en priorité sur **Windows 10/11**, avec possibilité d'extension Linux.
+
+Le produit final doit avoir une architecture modulaire, sécurisée, testable et commercialisable.
+
+---
+
+# 2. POSITIONNEMENT
+
+Architecture globale :
+
+BK ENTREPRISE
+│
+├── BK-AI-WORKERS
+│   ├── AI Worker Core
+│   ├── Workers métiers
+│   └── Agents d'automatisation
+│
+└── BK SECURITY
+    │
+    ├── Security Core
+    ├── Network Sensors
+    ├── Endpoint Sensors
+    ├── LAN Sensors
+    ├── Event Pipeline
+    ├── Detection Engine
+    ├── Behavior Engine
+    ├── Correlation Engine
+    ├── Risk Engine
+    ├── Threat Intelligence
+    ├── MITRE ATT&CK
+    ├── Incident Engine
+    ├── AI Security SOC
+    ├── Response Engine
+    ├── Audit Engine
+    ├── SOC API
+    ├── SOC Dashboard
+    └── Windows Desktop / Electron
+
+---
+
+# 3. PRINCIPE FONDAMENTAL
+
+BK Security ne doit PAS être simplement :
+
+"une IA qui regarde le réseau".
+
+L'architecture doit suivre cette logique :
+
+CAPTURE
+↓
+NORMALISATION
+↓
+ENRICHISSEMENT
+↓
+DÉTECTION DÉTERMINISTE
+↓
+ANALYSE COMPORTEMENTALE
+↓
+THREAT INTELLIGENCE
+↓
+MITRE ATT&CK
+↓
+CORRÉLATION
+↓
+RISK SCORING
+↓
+ALERT
+↓
+INCIDENT
+↓
+AI SECURITY SOC
+↓
+RECOMMANDATION
+↓
+POLICY ENGINE
+↓
+RESPONSE ENGINE
+↓
+AUDIT
+
+L'IA intervient comme couche d'analyse et d'investigation.
+
+Elle ne doit pas remplacer les mécanismes déterministes de sécurité.
+
+---
+
+# 4. ARCHITECTURE TECHNIQUE
+
+## Backend
+
+Python 3.11+
+
+Framework :
+
+FastAPI
+
+Composants :
+
+- asyncio
+- Pydantic
+- psutil
+- Scapy
+- SQLite
+- WebSocket
+- logging structuré
+- cryptographie
+- moteur de règles
+
+---
+
+# 5. FRONTEND
+
+Dashboard :
+
+React
+
+Vite
+
+JavaScript/TypeScript selon besoin.
+
+Fonctions :
+
+- Login
+- Dashboard SOC
+- Live Network
+- Hosts
+- Processes
+- Connections
+- DNS
+- Alerts
+- Incidents
+- Threat Intelligence
+- MITRE
+- Investigation
+- AI Security Analyst
+- Response
+- Audit
+- Reports
+- Settings
+
+Design :
+
+premium
+professionnel
+dark SOC
+lisible
+responsive
+
+---
+
+# 6. DESKTOP
+
+Electron.
+
+Architecture :
+
+Electron
+│
+├── Main Process
+│
+├── Preload
+│
+└── React Dashboard
+
+Le backend Python tourne localement.
+
+Communication :
+
+React
+↓
+HTTP REST / WebSocket
+↓
+FastAPI
+↓
+Security Core
+
+Electron doit :
+
+- démarrer le backend ;
+- vérifier son état ;
+- afficher le dashboard ;
+- gérer la fermeture propre ;
+- détecter les erreurs backend ;
+- fonctionner avec privilèges nécessaires ;
+- préparer l'installation Npcap ;
+- être packagé en NSIS.
+
+Sécurité Electron :
+
+- contextIsolation = true
+- nodeIntegration = false
+- sandbox = true
+- aucune ouverture arbitraire de fenêtre ;
+- IPC limité ;
+- aucun secret dans le frontend.
+
+---
+
+# 7. SENSORS
+
+## 7.1 Network Sensor
+
+Objectif :
+
+Capturer le trafic réseau.
+
+Windows :
+
+Scapy + Npcap.
+
+Données :
+
+- timestamp
+- interface
+- source IP
+- destination IP
+- source port
+- destination port
+- protocol
+- packet size
+- direction
+- flags
+- process
+- PID si disponible
+- hostname si disponible
+
+Protocoles :
+
+- TCP
+- UDP
+- ICMP
+- DNS
+- IPv4
+- IPv6 lorsque possible
+
+Le sensor doit avoir :
+
+start()
+stop()
+status()
+available()
+health()
+
+---
+
+# 7.2 Endpoint Process Sensor
+
+Utiliser :
+
+psutil
+
+Surveiller :
+
+- PID
+- parent PID
+- executable
+- command line
+- username
+- creation time
+- CPU
+- memory
+- process tree
+
+Processus suspects :
+
+powershell.exe
+cmd.exe
+wscript.exe
+cscript.exe
+mshta.exe
+regsvr32.exe
+certutil.exe
+bitsadmin.exe
+rundll32.exe
+msiexec.exe
+schtasks.exe
+at.exe
+
+Cette liste doit être configurable.
+
+---
+
+# 7.3 Socket Sensor
+
+Utiliser :
+
+psutil.net_connections()
+
+Collecter :
+
+- local IP
+- local port
+- remote IP
+- remote port
+- protocol
+- status
+- PID
+- process name
+
+Objectif :
+
+faire la relation :
+
+PROCESSUS
+↕
+SOCKET
+↕
+CONNEXION
+↕
+DESTINATION
+
+---
+
+# 7.4 DNS Sensor
+
+Collecter :
+
+- hostname
+- resolved IP
+- timestamp
+- process si disponible
+- fréquence
+- nombre de résolutions
+
+Détecter :
+
+- domaines suspects ;
+- domaines nouvellement observés ;
+- répétitions anormales ;
+- domaines présents dans Threat Intelligence ;
+- comportements DNS inhabituels.
+
+---
+
+# 7.5 Host Identity Sensor
+
+Identifier :
+
+- hostname
+- OS
+- version
+- username
+- local IP
+- interfaces
+- MAC
+- gateway
+- DNS
+- machine ID
+
+Créer :
+
+host_id
+
+Chaque événement doit pouvoir être rattaché à un host.
+
+---
+
+# 7.6 LAN Sensor
+
+Fonctions :
+
+- ARP scan ;
+- découverte des appareils ;
+- IP ;
+- MAC ;
+- hostname ;
+- constructeur lorsque disponible ;
+- première apparition ;
+- dernière apparition ;
+- état online/offline.
+
+Détecter :
+
+- nouvel appareil ;
+- appareil inconnu ;
+- changement MAC ;
+- changement IP ;
+- comportement inhabituel.
+
+---
+
+# 7.7 Media Sensor
+
+Optionnel mais prévu :
+
+- microphone ;
+- caméra.
+
+Objectif :
+
+détecter les accès inattendus.
+
+Le sensor doit être désactivable.
+
+---
+
+# 8. EVENT BUS
+
+Tous les sensors publient vers un Event Bus.
+
+Architecture :
+
+NETWORK SENSOR
+ENDPOINT SENSOR
+SOCKET SENSOR
+DNS SENSOR
+LAN SENSOR
+HOST SENSOR
+MEDIA SENSOR
+       │
+       ▼
+   EVENT BUS
+       │
+       ▼
+EVENT NORMALIZER
+
+---
+
+# 9. SECURITY EVENT
+
+Modèle commun :
+
+SecurityEvent
+
+Champs minimum :
+
+event_id
+event_type
+timestamp
+host_id
+source
+severity
+data
+tags
+process
+network
+enrichment
+risk_score
+correlation_id
+
+Types :
+
+network.packet
+network.connection
+network.dns
+endpoint.process
+endpoint.socket
+endpoint.media
+lan.device
+security.alert
+security.incident
+response.action
+
+Chaque event doit être sérialisable JSON.
+
+---
+
+# 10. EVENT PIPELINE
+
+Pipeline officiel :
+
+SENSOR
+↓
+RAW EVENT
+↓
+NORMALIZER
+↓
+VALIDATION
+↓
+ENRICHMENT
+↓
+THREAT INTELLIGENCE
+↓
+MITRE MAPPING
+↓
+BEHAVIOR ENGINE
+↓
+DETECTION ENGINE
+↓
+CORRELATION ENGINE
+↓
+RISK ENGINE
+↓
+ALERT ENGINE
+↓
+INCIDENT ENGINE
+↓
+AI SOC
+↓
+RESPONSE POLICY
+↓
+RESPONSE ENGINE
+↓
+AUDIT
+↓
+DATABASE
+↓
+WEBSOCKET
+↓
+SOC DASHBOARD
+
+---
+
+# 11. NORMALIZER
+
+Tous les sensors doivent produire un modèle commun.
+
+Le normalizer doit :
+
+- vérifier les champs ;
+- convertir timestamps ;
+- normaliser IP ;
+- normaliser ports ;
+- normaliser protocoles ;
+- rattacher host_id ;
+- rattacher process ;
+- générer event_id ;
+- ajouter source ;
+- ajouter tags.
+
+---
+
+# 12. THREAT INTELLIGENCE
+
+Architecture :
+
+ThreatIntelEngine
+
+Doit fonctionner :
+
+OFFLINE FIRST.
+
+Sources :
+
+- IOC locaux ;
+- IP ;
+- CIDR ;
+- domaines ;
+- hash ;
+- éventuellement URL ;
+- futures API externes.
+
+Exemple :
+
+IOC :
+
+8.8.8.8
+malicious-domain.example
+
+Si événement :
+
+destination_ip = IOC
+
+alors :
+
+indicator_match = true
+
+et enrichissement :
+
+{
+  "indicator_type": "ip",
+  "indicator": "...",
+  "source": "...",
+  "confidence": ...
+}
+
+Les intégrations externes doivent être optionnelles.
+
+---
+
+# 13. MITRE ATT&CK
+
+Créer un moteur de mapping.
+
+Exemples :
+
+PowerShell :
+
+T1059
+T1059.001
+
+Command Shell :
+
+T1059.003
+
+Suspicious scripting :
+
+T1059
+
+Le mapping doit être attaché :
+
+EVENT
+→ ALERT
+→ INCIDENT
+
+Un incident peut contenir plusieurs techniques.
+
+---
+
+# 14. DETECTION ENGINE
+
+Le moteur doit fonctionner avec des règles déterministes.
+
+Exemples :
+
+## Suspicious Process
+
+powershell.exe
++
+connexion réseau inhabituelle
+
+→ suspicion.
+
+## Suspicious Port
+
+Ports configurables :
+
+4444
+4445
+1337
+31337
+6666
+6667
+5900
+5901
+1080
+8080
+9001
+9050
+
+## Script + Network
+
+powershell
++
+remote connection
++
+unusual destination
+
+→ alerte.
+
+## IOC Match
+
+destination IP/domain
++
+IOC
+
+→ alerte haute priorité.
+
+---
+
+# 15. BEHAVIOR ENGINE
+
+Fenêtre d'analyse :
+
+60 secondes minimum.
+
+Détecter :
+
+- nouvelle destination ;
+- répétition de connexions ;
+- beaconing ;
+- fréquence inhabituelle ;
+- processus script + réseau ;
+- augmentation brutale du trafic ;
+- comportement rare.
+
+Exemple :
+
+process
+↓
+connexion toutes les 5 secondes
+↓
+même destination
+↓
+pendant plusieurs minutes
+
+→ comportement beaconing.
+
+---
+
+# 16. CORRELATION ENGINE
+
+Fenêtre :
+
+300 secondes par défaut.
+
+Corréler :
+
+- process ;
+- destination ;
+- port ;
+- DNS ;
+- IOC ;
+- MITRE ;
+- comportement ;
+- plusieurs alertes ;
+- plusieurs sensors.
+
+Exemple :
+
+PowerShell
++
+DNS suspect
++
+connexion externe
++
+port inhabituel
++
+IOC
+
+ne doivent pas produire 5 alertes indépendantes uniquement.
+
+Ils doivent pouvoir produire :
+
+1 INCIDENT
+
+avec plusieurs preuves.
+
+---
+
+# 17. RISK ENGINE
+
+Score de risque :
+
+0 → 100.
+
+Facteurs :
+
+- severity ;
+- confidence ;
+- IOC ;
+- processus ;
+- port ;
+- comportement ;
+- répétition ;
+- corrélation ;
+- MITRE ;
+- destination ;
+- contexte host.
+
+Le score doit être explicable.
+
+Exemple :
+
+{
+  "risk_score": 87,
+  "factors": [
+    "suspicious_process",
+    "ioc_match",
+    "beaconing",
+    "multi_signal_correlation"
+  ]
+}
+
+---
+
+# 18. ALERT ENGINE
+
+Une SecurityAlert contient :
+
+alert_id
+title
+alert_type
+severity
+confidence
+risk_score
+reason
+evidence
+source_event_ids
+mitre_techniques
+host_id
+correlation_id
+timestamp
+
+Niveaux :
+
+INFO
+LOW
+MEDIUM
+HIGH
+CRITICAL
+
+---
+
+# 19. INCIDENT ENGINE
+
+Un incident regroupe plusieurs alertes.
+
+SecurityIncident :
+
+incident_id
+host_id
+title
+severity
+risk_score
+status
+alert_ids
+mitre_techniques
+summary
+created_at
+updated_at
+
+Statuses :
+
+NEW
+INVESTIGATING
+CONTAINMENT
+RESOLVED
+CLOSED
+
+Actions :
+
+- créer ;
+- enrichir ;
+- corréler ;
+- investiguer ;
+- contenir ;
+- résoudre ;
+- fermer.
+
+Toutes les transitions doivent être auditées.
+
+---
+
+# 20. AI SECURITY SOC
+
+Créer 8 workers spécialisés.
+
+### ThreatAnalyst
+
+Analyse :
+
+- menace ;
+- IOC ;
+- réputation ;
+- contexte.
+
+### NetworkAnalyst
+
+Analyse :
+
+- flux ;
+- destinations ;
+- ports ;
+- protocoles ;
+- anomalies.
+
+### ProcessAnalyst
+
+Analyse :
+
+- processus ;
+- parent ;
+- command line ;
+- process tree ;
+- connexions.
+
+### BehaviorAnalyst
+
+Analyse :
+
+- séquences ;
+- fréquence ;
+- répétition ;
+- anomalies.
+
+### IncidentAnalyst
+
+Analyse :
+
+- ensemble des alertes ;
+- timeline ;
+- gravité ;
+- scénario possible.
+
+### ThreatIntelAnalyst
+
+Analyse :
+
+- IOC ;
+- indicateurs ;
+- correspondances.
+
+### ForensicsAnalyst
+
+Analyse :
+
+- timeline ;
+- événements ;
+- processus ;
+- connexions ;
+- preuves.
+
+### SecurityReporter
+
+Produit :
+
+- résumé ;
+- timeline ;
+- preuves ;
+- techniques MITRE ;
+- niveau de risque ;
+- recommandations.
+
+---
+
+# 21. AI ORCHESTRATOR
+
+Architecture :
+
+EVENT
+↓
+SecurityCore
+↓
+AI Orchestrator
+↓
+Workers spécialisés
+↓
+Evidence
+↓
+Synthesis
+↓
+Investigation result
+
+Important :
+
+L'IA ne doit pas inventer de preuves.
+
+Chaque conclusion doit être reliée à :
+
+- event_id ;
+- alert_id ;
+- process ;
+- connection ;
+- IOC ;
+- timestamp.
+
+Format :
+
+{
+  "finding": "...",
+  "confidence": 0.91,
+  "evidence": [
+    "event_id",
+    "alert_id"
+  ],
+  "mitre": [
+    "T1059.001"
+  ],
+  "recommended_action": "..."
+}
+
+---
+
+# 22. RESPONSE ENGINE
+
+Actions disponibles :
+
+ALERT
+REQUIRE_APPROVAL
+BLOCK
+ISOLATE
+TERMINATE_PROCESS
+
+Principe :
+
+Les actions dangereuses ne doivent jamais être exécutées automatiquement sans politique explicite.
+
+Architecture :
+
+AI RECOMMENDATION
+↓
+POLICY ENGINE
+↓
+APPROVAL
+↓
+RESPONSE ENGINE
+↓
+ADAPTER
+↓
+OS
+
+---
+
+# 23. RESPONSE ADAPTERS
+
+Créer abstraction :
+
+ResponseAdapter
+
+Exemples futurs :
+
+WindowsFirewallAdapter
+WindowsProcessAdapter
+WindowsNetworkAdapter
+EndpointIsolationAdapter
+
+Pour V1 :
+
+DRY RUN par défaut.
+
+Aucune action destructive réelle tant que l'adapter n'a pas été validé sur Windows.
+
+Chaque action doit générer :
+
+execution_id
+timestamp
+user
+action
+target
+result
+rollback_possible
+
+---
+
+# 24. ROLLBACK
+
+Chaque action supportant rollback doit enregistrer :
+
+previous_state
+new_state
+adapter
+execution_id
+
+API :
+
+/api/v1/response/rollback/{execution_id}
+
+---
+
+# 25. AUDIT
+
+Tout événement sensible doit être journalisé :
+
+LOGIN
+LOGOUT
+ALERT_INVESTIGATION
+INCIDENT_UPDATE
+RESPONSE_PLAN
+RESPONSE_EXECUTION
+RESPONSE_ROLLBACK
+SETTINGS_CHANGE
+
+Audit :
+
+timestamp
+user
+role
+action
+target
+result
+metadata
+
+Audit immutable autant que possible.
+
+---
+
+# 26. AUTHENTICATION
+
+RBAC :
+
+ADMIN
+ANALYST
+VIEWER
+
+ADMIN :
+
+tout.
+
+ANALYST :
+
+investigation
+incidents
+alerts
+réponse selon policy.
+
+VIEWER :
+
+lecture uniquement.
+
+Les tokens doivent être sécurisés.
+
+Le secret de développement par défaut doit être refusé en production.
+
+Variables :
+
+BK_SECURITY_ENV
+BK_SECURITY_ADMIN_PASSWORD
+BK_SECURITY_ANALYST_PASSWORD
+BK_SECURITY_VIEWER_PASSWORD
+BK_SECURITY_SECRET
+
+---
+
+# 27. API
+
+FastAPI.
+
+Endpoints minimum :
+
+GET /health
+
+POST /api/v1/auth/login
+
+GET /api/v1/overview
+
+GET /api/v1/events
+
+GET /api/v1/alerts
+
+GET /api/v1/incidents
+
+GET /api/v1/hosts
+
+GET /api/v1/audit
+
+GET /api/v1/sensors/status
+
+GET /api/v1/capture/capabilities
+
+POST /api/v1/capture/start
+
+POST /api/v1/capture/stop
+
+GET /api/v1/processes/sockets
+
+GET /api/v1/host/identity
+
+POST /api/v1/dns/resolve
+
+POST /api/v1/alerts/{alert_id}/investigate
+
+POST /api/v1/response/plan
+
+POST /api/v1/response/execute
+
+POST /api/v1/response/rollback/{execution_id}
+
+WebSocket :
+
+/ws/soc
+
+Le WebSocket doit transmettre :
+
+events
+alerts
+incidents
+sensor status
+response status
+
+---
+
+# 28. DATABASE
+
+V1 :
+
+SQLite.
+
+Activer :
+
+WAL.
+
+Tables minimum :
+
+events
+alerts
+incidents
+audit
+hosts
+response_actions
+
+Préparer une abstraction Repository afin de pouvoir migrer vers PostgreSQL.
+
+---
+
+# 29. PERFORMANCE
+
+Le pipeline ne doit pas faire une opération lourde pour chaque paquet.
+
+Prévoir :
+
+- aggregation ;
+- batching ;
+- queues ;
+- throttling ;
+- cache ;
+- socket map refresh ;
+- process attribution périodique ;
+- limitation des logs ;
+- backpressure.
+
+Le système doit continuer à fonctionner sous forte charge.
+
+---
+
+# 30. NETWORK CAPTURE
+
+La capture live doit :
+
+1. détecter Npcap ;
+2. détecter les interfaces ;
+3. permettre de choisir une interface ;
+4. démarrer AsyncSniffer ;
+5. filtrer IP ;
+6. parser TCP/UDP/ICMP ;
+7. attribuer le process lorsque possible ;
+8. générer SecurityEvent ;
+9. envoyer au pipeline.
+
+La capture ne doit pas crasher si Scapy/Npcap est absent.
+
+Le mode simulation doit toujours rester disponible.
+
+---
+
+# 31. MODE SIMULATION
+
+Créer un générateur d'événements.
+
+Scénarios :
+
+NORMAL_TRAFFIC
+PORT_SCAN
+SUSPICIOUS_PROCESS
+BEACONING
+DNS_ANOMALY
+IOC_MATCH
+MULTI_SIGNAL_ATTACK
+
+Objectif :
+
+tester toute la chaîne sans réseau réel.
+
+---
+
+# 32. DASHBOARD SOC
+
+Écran principal :
+
+BK SECURITY
+
+Cards :
+
+- Risk Score
+- Active Incidents
+- Critical Alerts
+- Hosts
+- Sensors
+- Network Traffic
+
+Sections :
+
+LIVE NETWORK
+ALERTS
+INCIDENTS
+HOSTS
+PROCESSES
+DNS
+THREAT INTELLIGENCE
+MITRE ATT&CK
+AI SOC
+RESPONSE
+AUDIT
+
+---
+
+# 33. LIVE SOC
+
+Le dashboard doit recevoir les événements par WebSocket.
+
+Exemple :
+
+EVENT
+→ backend
+→ websocket
+→ dashboard
+
+Afficher :
+
+- nouvel événement ;
+- nouvelle alerte ;
+- nouvel incident ;
+- changement de risque ;
+- sensor offline ;
+- réponse exécutée.
+
+---
+
+# 34. INCIDENT VIEW
+
+Pour chaque incident :
+
+Résumé
+Risk Score
+Severity
+Host
+Timeline
+Alerts
+Evidence
+Processes
+Connections
+DNS
+IOC
+MITRE ATT&CK
+AI Analysis
+Recommended Actions
+Response History
+Audit
+
+---
+
+# 35. HOST VIEW
+
+Pour chaque machine :
+
+Host ID
+Hostname
+OS
+IP
+MAC
+Gateway
+DNS
+
+Processes
+Sockets
+Network
+Alerts
+Incidents
+Risk history
+
+---
+
+# 36. PROCESS VIEW
+
+Afficher :
+
+PID
+Process
+Parent
+Command Line
+User
+CPU
+Memory
+Network Connections
+Risk
+Alerts
+
+Process tree :
+
+Parent
+│
+├── child
+│   ├── child
+│
+└── child
+
+---
+
+# 37. MITRE VIEW
+
+Afficher :
+
+Technique
+Tactic
+Nombre d'occurrences
+Hosts
+Incidents
+Evidence
+
+Cliquer sur une technique doit afficher les événements correspondants.
+
+---
+
+# 38. THREAT INTELLIGENCE VIEW
+
+Afficher :
+
+IOC
+Type
+Source
+Confidence
+First Seen
+Last Seen
+Matches
+
+Types :
+
+IP
+DOMAIN
+URL
+HASH
+CIDR
+
+---
+
+# 39. SETTINGS
+
+Paramètres :
+
+- capture interface ;
+- capture mode ;
+- sensors ;
+- thresholds ;
+- detection rules ;
+- risk weights ;
+- correlation window ;
+- behavior window ;
+- threat intel ;
+- response policies ;
+- users ;
+- logs.
+
+Les paramètres critiques doivent être protégés RBAC.
+
+---
+
+# 40. LOGGING
+
+Logs structurés.
+
+Niveaux :
+
+DEBUG
+INFO
+WARNING
+ERROR
+CRITICAL
+
+Ne jamais écrire :
+
+- mots de passe ;
+- tokens ;
+- secrets ;
+- données sensibles inutiles.
+
+---
+
+# 41. SECURITY HARDENING
+
+Backend :
+
+- CORS configurable ;
+- auth obligatoire ;
+- RBAC ;
+- validation Pydantic ;
+- secrets via environment ;
+- aucune clé dans le frontend ;
+- localhost par défaut ;
+- rate limiting à prévoir ;
+- logs audit ;
+- WebSocket authentifié.
+
+Electron :
+
+contextIsolation true
+nodeIntegration false
+sandbox true
+
+Bloquer :
+
+- navigation externe non autorisée ;
+- injection ;
+- accès filesystem depuis renderer.
+
+---
+
+# 42. TESTS
+
+Tests unitaires :
+
+- Event model
+- Normalizer
+- Risk Engine
+- Detection Engine
+- Behavior Engine
+- Correlation Engine
+- MITRE
+- Threat Intelligence
+- Incident Engine
+- Response Engine
+- Auth
+- RBAC
+
+Tests intégration :
+
+SENSOR
+→ EVENT
+→ DETECTION
+→ ALERT
+→ INCIDENT
+
+Tests simulation :
+
+PORT_SCAN
+SUSPICIOUS_PROCESS
+BEACONING
+IOC_MATCH
+MULTI_SIGNAL
+
+Tests API :
+
+health
+login
+overview
+alerts
+incidents
+events
+response
+audit
+
+Tests WebSocket.
+
+Tests frontend.
+
+Tests Electron.
+
+---
+
+# 43. WINDOWS TESTS
+
+Sur Windows réel :
+
+1. vérifier Python ;
+2. vérifier Node ;
+3. vérifier npm ;
+4. vérifier Npcap ;
+5. vérifier interfaces ;
+6. lancer backend administrateur ;
+7. démarrer simulation ;
+8. démarrer capture ;
+9. vérifier trafic ;
+10. vérifier process attribution ;
+11. vérifier alertes ;
+12. vérifier incidents ;
+13. vérifier WebSocket ;
+14. vérifier Electron.
+
+---
+
+# 44. Npcap
+
+Vérifier :
+
+Npcap installé
+↓
+WinPcap compatibility si nécessaire
+↓
+Scapy disponible
+↓
+interfaces visibles
+↓
+capture possible
+
+Si Npcap absent :
+
+afficher diagnostic clair.
+
+Ne jamais faire croire que la capture live fonctionne si elle n'a pas été réellement testée.
+
+---
+
+# 45. BUILD WINDOWS
+
+Structure :
+
+backend Python
++
+dashboard React
++
+Electron
+↓
+NSIS
+↓
+BK-Security-Setup.exe
+
+L'installateur doit installer :
+
+- BK Security ;
+- backend ;
+- dashboard ;
+- Electron ;
+- configuration ;
+- raccourci ;
+- désinstallation.
+
+Npcap peut être :
+
+- détecté ;
+- installé séparément ;
+- ou proposé pendant l'installation selon licence/conditions de redistribution.
+
+---
+
+# 46. PRODUCTION ELECTRON
+
+Attention :
+
+Le backend Python ne doit pas dépendre d'un chemin de développement.
+
+Prévoir :
+
+Electron
+↓
+resources/backend
+↓
+exécutable Python packagé
+
+Utiliser éventuellement :
+
+PyInstaller
+
+pour produire :
+
+bk-security-backend.exe
+
+Puis :
+
+Electron
++
+bk-security-backend.exe
+↓
+NSIS
+
+---
+
+# 47. CONFIGURATION
+
+Utiliser :
+
+.env
+
+pour développement.
+
+Production :
+
+configuration sécurisée.
+
+Variables :
+
+BK_SECURITY_ENV
+BK_SECURITY_SECRET
+BK_SECURITY_ADMIN_PASSWORD
+BK_SECURITY_ANALYST_PASSWORD
+BK_SECURITY_VIEWER_PASSWORD
+BK_SECURITY_CORS_ORIGINS
+BK_SECURITY_DB
+BK_SECURITY_INTERFACE
+
+Ne jamais committer les secrets.
+
+---
+
+# 48. CI/CD
+
+Préparer GitHub Actions :
+
+Python tests
+↓
+compile
+↓
+frontend npm install
+↓
+frontend build
+↓
+backend tests
+↓
+package
+
+Workflow Windows pour :
+
+- Python ;
+- Node ;
+- Electron ;
+- NSIS.
+
+---
+
+# 49. STRUCTURE DU PROJET
+
+bk-security/
+│
+├── bk_security/
+│   ├── core.py
+│   ├── intelligence.py
+│   ├── platform_windows.py
+│   │
+│   ├── api/
+│   │   ├── app.py
+│   │   ├── soc_routes.py
+│   │   └── response_routes.py
+│   │
+│   ├── auth/
+│   │   └── security.py
+│   │
+│   ├── capture/
+│   │   ├── live.py
+│   │   ├── simulation.py
+│   │   ├── models.py
+│   │   └── pipeline.py
+│   │
+│   ├── sensors/
+│   │   ├── manager.py
+│   │   ├── network.py
+│   │   ├── endpoint.py
+│   │   ├── dns.py
+│   │   ├── socket.py
+│   │   ├── host_identity.py
+│   │   ├── orbis_bridge.py
+│   │   └── media.py
+│   │
+│   ├── events/
+│   │   ├── bus.py
+│   │   ├── models.py
+│   │   └── adapters.py
+│   │
+│   ├── detection/
+│   │   ├── rules.py
+│   │   ├── behavior.py
+│   │   ├── correlation.py
+│   │   ├── risk.py
+│   │   └── mitre.py
+│   │
+│   ├── incidents/
+│   │   └── models.py
+│   │
+│   ├── database/
+│   │   └── store.py
+│   │
+│   ├── ai/
+│   │   ├── contracts.py
+│   │   ├── orchestrator.py
+│   │   └── workers/
+│   │       └── builtin.py
+│   │
+│   └── policy/
+│       ├── engine.py
+│       ├── response.py
+│       └── adapters.py
+│
+├── dashboard/
+│   ├── src/
+│   │   ├── main.jsx
+│   │   ├── style.css
+│   │   ├── pages/
+│   │   ├── components/
+│   │   └── services/
+│   ├── package.json
+│   └── vite.config.js
+│
+├── electron/
+│   ├── main.js
+│   ├── preload.js
+│   ├── package.json
+│   └── config.json
+│
+├── tests/
+│
+├── scripts/
+│   ├── run_dev.ps1
+│   ├── build_windows.ps1
+│   └── package_backend.ps1
+│
+├── docs/
+│
+├── README.md
+├── ARCHITECTURE.md
+├── NOTICE-ORIGINS.md
+├── V1_RELEASE_CHECKLIST.md
+├── VERSION
+└── pyproject.toml
+
+---
+
+# 50. PIPELINE FINAL
+
+Le pipeline officiel de BK Security est :
+
+                    ┌─────────────────┐
+                    │ NETWORK SENSOR  │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │ ENDPOINT SENSOR │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │   DNS SENSOR    │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │   LAN SENSOR    │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │ SOCKET SENSOR   │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │    EVENT BUS    │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │   NORMALIZER    │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │  ENRICHMENT     │
+                    └────────┬────────┘
+                             │
+              ┌──────────────┼──────────────┐
+              │              │              │
+              ▼              ▼              ▼
+          THREAT INTEL    MITRE         HOST/PROCESS
+              │              │              │
+              └──────────────┼──────────────┘
+                             ▼
+                    ┌─────────────────┐
+                    │ BEHAVIOR ENGINE │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │ DETECTION ENGINE│
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │ CORRELATION     │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │   RISK ENGINE   │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │ ALERT ENGINE    │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │ INCIDENT ENGINE │
+                    └────────┬────────┘
+                             │
+              ┌──────────────▼──────────────┐
+              │       AI SECURITY SOC       │
+              │                              │
+              │ Threat Analyst               │
+              │ Network Analyst              │
+              │ Process Analyst              │
+              │ Behavior Analyst             │
+              │ Incident Analyst              │
+              │ Threat Intel Analyst         │
+              │ Forensics Analyst            │
+              │ Security Reporter            │
+              └──────────────┬───────────────┘
+                             │
+                    ┌────────▼────────┐
+                    │ POLICY ENGINE   │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │ RESPONSE ENGINE │
+                    └────────┬────────┘
+                             │
+                 ┌───────────┼───────────┐
+                 ▼           ▼           ▼
+              ALERT       BLOCK       ISOLATE
+                            │
+                       APPROVAL
+                            │
+                         AUDIT
+                            │
+                            ▼
+                       DATABASE
+                            │
+                            ▼
+                       WEBSOCKET
+                            │
+                            ▼
+                       SOC DASHBOARD
+
+---
+
+# 51. RÈGLE ABSOLUE POUR CODEX
+
+Ne pas simplement créer des fichiers ou déclarer les fonctions.
+
+Chaque fonctionnalité doit être :
+
+IMPLEMENTED
++
+TESTED
++
+INTEGRATED
++
+VALIDATED
+
+Ne jamais écrire :
+
+"fonctionnalité terminée"
+
+sans test correspondant.
+
+---
+
+# 52. ORDRE DE RÉALISATION
+
+Phase 1 :
+
+Core
+Events
+Database
+Sensors
+
+↓
+
+Phase 2 :
+
+Detection
+Behavior
+Risk
+MITRE
+Threat Intel
+
+↓
+
+Phase 3 :
+
+Correlation
+Alerts
+Incidents
+
+↓
+
+Phase 4 :
+
+AI SOC
+
+↓
+
+Phase 5 :
+
+Response
+Policy
+Audit
+
+↓
+
+Phase 6 :
+
+API
+WebSocket
+
+↓
+
+Phase 7 :
+
+Dashboard
+
+↓
+
+Phase 8 :
+
+Electron
+
+↓
+
+Phase 9 :
+
+Windows/Npcap
+
+↓
+
+Phase 10 :
+
+Tests intégration
+
+↓
+
+Phase 11 :
+
+Performance
+
+↓
+
+Phase 12 :
+
+Packaging
+
+↓
+
+Phase 13 :
+
+Installer Windows
+
+---
+
+# 53. CRITÈRE DE FIN V1
+
+BK Security V1 est considéré comme techniquement prêt lorsque :
+
+[ ] Backend démarre sur Windows
+
+[ ] Authentication fonctionne
+
+[ ] RBAC fonctionne
+
+[ ] Sensors fonctionnent
+
+[ ] Npcap détecté
+
+[ ] Interface réseau détectée
+
+[ ] Capture simulation fonctionne
+
+[ ] Capture live fonctionne sur machine de validation
+
+[ ] SecurityEvents générés
+
+[ ] Process attribution fonctionne lorsque disponible
+
+[ ] DNS telemetry fonctionne
+
+[ ] LAN discovery fonctionne
+
+[ ] Detection fonctionne
+
+[ ] Behavior fonctionne
+
+[ ] Threat Intelligence fonctionne
+
+[ ] MITRE fonctionne
+
+[ ] Correlation fonctionne
+
+[ ] Risk score fonctionne
+
+[ ] Alerts persistantes
+
+[ ] Incidents persistants
+
+[ ] Incident lifecycle fonctionne
+
+[ ] AI workers fonctionnent avec evidence
+
+[ ] Response policy fonctionne
+
+[ ] Dry-run fonctionne
+
+[ ] Approval fonctionne
+
+[ ] Audit fonctionne
+
+[ ] WebSocket fonctionne
+
+[ ] Dashboard fonctionne
+
+[ ] Electron fonctionne
+
+[ ] Backend packagé fonctionne
+
+[ ] Installer Windows fonctionne
+
+[ ] Tests unitaires passent
+
+[ ] Tests intégration passent
+
+[ ] Tests E2E passent
+
+[ ] Aucun secret dans le repository
+
+[ ] Documentation complète
+
+[ ] Licence/origines documentées
+
+[ ] Performance validée sur Windows réel
+
+---
+
+# 54. IMPORTANT — ORBIS / LICENCE
+
+Le projet PCYBOX Orbis utilisé comme référence contient une licence AGPL et des conditions supplémentaires.
+
+Avant toute commercialisation de code dérivé :
+
+- conserver les obligations applicables ;
+- conserver les notices ;
+- respecter les conditions de modification/distribution ;
+- vérifier la nécessité d'une licence commerciale auprès de l'auteur pour une distribution commerciale de code dérivé.
+
+Ne pas supprimer :
+
+NOTICE-ORIGINS.md
+
+Ne pas présenter du code tiers comme du code original BK ENTREPRISE.
+
+---
+
+# 55. OBJECTIF FINAL
+
+Le résultat doit être :
+
+BK SECURITY
+
+Une plateforme Windows professionnelle capable de :
+
+MONITORER
+↓
+DÉTECTER
+↓
+COMPRENDRE
+↓
+CORRÉLER
+↓
+INVESTIGUER
+↓
+ÉVALUER LE RISQUE
+↓
+RECOMMANDER
+↓
+RÉPONDRE
+↓
+AUDITER
+
+avec :
+
+Network Security
++
+Endpoint Security
++
+LAN Security
++
+Threat Intelligence
++
+MITRE ATT&CK
++
+Behavior Detection
++
+AI Security SOC
++
+Incident Response
++
+SOC Dashboard
++
+Windows Desktop
+
+Le système doit être modulaire afin que de nouveaux sensors, règles, workers IA, sources Threat Intelligence et Response Adapters puissent être ajoutés sans réécrire le cœur de BK Security.
+
+---
+
+# 56. EXTENSION ENTERPRISE APRÈS LA V1
+
+Les phases 1 à 13 restent l'ordre de réalisation V1. Les phases ci-dessous ne remplacent aucune phase V1 et ne sont pas considérées comme réalisées parce qu'elles sont documentées. Elles définissent l'ordre obligatoire de l'évolution vers une plateforme entreprise. La cible détaillée, les limites de la V1 et les critères de validation sont décrits dans `docs/ENTERPRISE_SCALE_TARGET_ARCHITECTURE.md`.
+
+Phase 14 :
+
+Threat model, périmètre produit, profils de déploiement, objectifs de charge, SLO, RPO/RTO et exigences clients mesurables.
+
+Le profil candidat, ses hypothèses et sa porte de sortie sont cadrés dans `docs/PHASE14_ENTERPRISE_REQUIREMENTS.md`. Il s'agit d'objectifs à confirmer, pas de capacités ou de SLA validés.
+
+↓
+
+Phase 15 :
+
+Plan de contrôle et plans de données isolés par client/région ; identité des clients, agents, services et utilisateurs ; modèle de résidence, minimisation, conservation et suppression des données.
+
+La décision d'un pilote dédié, le cycle de données et le statut du premier garde-fou de liaison de base sont documentés dans `docs/PHASE15_CUSTOMER_DATA_PLANE.md`. Cette liaison ne constitue pas à elle seule l'isolation client/région exigée par cette phase.
+
+La cible d'hébergement choisie est portable, sans fournisseur cloud sélectionné : l'image OCI et l'API Kubernetes sont des contrats candidats pour les déploiements sur site ou compatibles. Cette décision ne rend pas l'API V1 accessible à distance et ne constitue pas une validation de conteneur/cluster. Voir `docs/PHASE15_PORTABLE_DEPLOYMENT_CONTRACT.md`.
+
+↓
+
+Phase 16 :
+
+Contrat d'événements versionné ; agents de collecte authentifiés ; ingestion distribuée durable ; partitions, quotas, accusés de réception, déduplication, rejeu, backpressure et mise en quarantaine.
+
+↓
+
+Phase 17 :
+
+Services de détection et d'investigation isolés et supervisés ; orchestration des workers spécialisés ; Ollama comme analyste local facultatif, sans droit direct d'exécution.
+
+↓
+
+Phase 18 :
+
+Cycle de réponse contrôlé : détecter, qualifier, contenir/bloquer selon politique, corriger, vérifier par des contrôles indépendants, puis rétablir/redémarrer uniquement si les critères de santé sont satisfaits. Approbation humaine, idempotence, audit, arrêt d'urgence et rollback pour les actions sensibles.
+
+↓
+
+Phase 19 :
+
+Audit mensuel fondé sur preuves : événements reçus, détections, incidents, blocages exécutés et vérifiés, corrections vérifiées, rétablissements, faux positifs, couverture et limites de conservation. Une attaque « évitée » ne peut être comptée que si l'action de prévention et son résultat sont vérifiables.
+
+↓
+
+Phase 20 :
+
+Validation de charge, endurance, saturation, reprise/rejeu, perte de nœud, restauration de sauvegarde, isolation client, sécurité et coûts ; déploiement progressif et pilotes entreprise.
+
+Ne pas annoncer une capacité « milliards d'événements » ni un SLA avant d'avoir fixé le profil de charge et validé les seuils convenus sur une architecture représentative. Le statut et les résultats de chaque phase doivent être consignés séparément.
+
+# 57. CYCLE OPÉRATIONNEL DE RÉPONSE
+
+Chaque réponse doit pouvoir être retracée de l'événement source jusqu'au rétablissement :
+
+COLLECTER
+↓
+DÉTECTER ET QUALIFIER
+↓
+CONTENIR OU BLOQUER SI LA POLITIQUE L'AUTORISE
+↓
+CORRIGER ET CONSERVER LES PREUVES
+↓
+VÉRIFIER LA CORRECTION ET L'ÉTAT DE SANTÉ
+↓
+RÉTABLIR OU REDÉMARRER DE FAÇON CONTRÔLÉE
+↓
+AUDITER LE RÉSULTAT
+
+Un blocage ne signifie pas que la menace est corrigée. Le rétablissement n'est pas automatique après un simple délai : il exige une preuve de correction et des contrôles de santé définis. L'IA peut recommander et expliquer ; elle ne contourne pas les politiques d'autorisation ni les validations exigées.

@@ -1,0 +1,397 @@
+﻿'use strict';
+
+const { app, BrowserWindow, ipcMain, session, safeStorage, dialog } = require('electron');
+const { spawn } = require('child_process');
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const { isTrustedNavigation } = require('./security-policy');
+const { resolveBackendCommand, backendEnvironment } = require('./backend-command');
+
+let backend = null;
+let mainWindow = null;
+
+const developmentRoot = path.resolve(__dirname, '..');
+const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
+
+const host = cfg.backend.host;
+const port = cfg.backend.port;
+const trustedOrigin = `http://${host}:${port}`;
+
+const fallbackDashboard = app.isPackaged
+  ? path.join(process.resourcesPath, 'dashboard', 'static', 'index.html')
+  : path.resolve(developmentRoot, 'dashboard', 'static', 'index.html');
+
+const setupPage = path.join(__dirname, 'setup.html');
+const credentialFile = path.join(app.getPath('userData'), 'credentials.dat');
+
+function generateAuthSecret() {
+  return crypto.randomBytes(48).toString('base64url');
+}
+
+function encryptCredentials(credentials) {
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error('Windows secure storage is unavailable.');
+  }
+
+  const payload = Buffer.from(JSON.stringify(credentials), 'utf8');
+  return safeStorage.encryptString(payload.toString('base64'));
+}
+
+function decryptCredentials() {
+  if (!fs.existsSync(credentialFile)) return null;
+
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error('Windows secure storage is unavailable.');
+  }
+
+  const encrypted = fs.readFileSync(credentialFile, 'utf8');
+  const decoded = safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
+  return JSON.parse(Buffer.from(decoded, 'base64').toString('utf8'));
+}
+
+function saveCredentials(credentials) {
+  const encrypted = encryptCredentials(credentials);
+
+  fs.mkdirSync(path.dirname(credentialFile), { recursive: true });
+
+  const tempFile = `${credentialFile}.tmp`;
+  fs.writeFileSync(tempFile, encrypted, { encoding: 'utf8' });
+  fs.renameSync(tempFile, credentialFile);
+}
+
+function validateCredentials(credentials) {
+  const values = [
+    credentials.adminPassword,
+    credentials.analystPassword,
+    credentials.viewerPassword,
+  ];
+
+  if (values.some(value => typeof value !== 'string' || value.length < 12)) {
+    throw new Error('Each password must contain at least 12 characters.');
+  }
+
+  if (new Set(values).size !== values.length) {
+    throw new Error('Admin, Analyst and Viewer passwords must be different.');
+  }
+
+  if (typeof credentials.authSecret !== 'string' || credentials.authSecret.length < 32) {
+    throw new Error('Authentication secret is invalid.');
+  }
+}
+
+function credentialsFromEnvironment() {
+  const env = process.env;
+
+  if (
+    env.BK_SECURITY_ADMIN_PASSWORD &&
+    env.BK_SECURITY_ANALYST_PASSWORD &&
+    env.BK_SECURITY_VIEWER_PASSWORD &&
+    env.BK_SECURITY_AUTH_SECRET &&
+    env.BK_SECURITY_AUTH_SECRET.length >= 32
+  ) {
+    const credentials = {
+      adminPassword: env.BK_SECURITY_ADMIN_PASSWORD,
+      analystPassword: env.BK_SECURITY_ANALYST_PASSWORD,
+      viewerPassword: env.BK_SECURITY_VIEWER_PASSWORD,
+      authSecret: env.BK_SECURITY_AUTH_SECRET,
+    };
+
+    validateCredentials(credentials);
+    return credentials;
+  }
+
+  return null;
+}
+
+function loadCredentials() {
+  const stored = decryptCredentials();
+
+  if (stored) {
+    validateCredentials(stored);
+    return stored;
+  }
+
+  const migrated = credentialsFromEnvironment();
+
+  if (migrated) {
+    saveCredentials(migrated);
+    return migrated;
+  }
+
+  return null;
+}
+
+function credentialsExist() {
+  try {
+    return !!loadCredentials();
+  } catch (error) {
+    console.error('[BK Security] Credential store error:', error.message);
+    return false;
+  }
+}
+
+function createSetupWindow() {
+  mainWindow = new BrowserWindow({
+    width: 720,
+    height: 760,
+    minWidth: 620,
+    minHeight: 680,
+    resizable: true,
+    backgroundColor: '#090909',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  mainWindow.loadFile(setupPage);
+}
+
+function createMainWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1500,
+    height: 950,
+    minWidth: 1100,
+    minHeight: 700,
+    backgroundColor: '#090909',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+
+  mainWindow.webContents.on('will-navigate', (event, targetUrl) => {
+    if (!isTrustedNavigation(targetUrl, trustedOrigin, fallbackDashboard)) {
+      event.preventDefault();
+    }
+  });
+
+  mainWindow.webContents.on('will-attach-webview', event => {
+    event.preventDefault();
+  });
+
+  return mainWindow;
+}
+
+function backendCommand() {
+  return resolveBackendCommand({
+    isPackaged: app.isPackaged,
+    resourcesPath: process.resourcesPath,
+    env: process.env,
+    config: cfg.backend,
+    developmentRoot,
+  });
+}
+
+function startBackend() {
+  if (backend && !backend.killed) return;
+
+  const credentials = loadCredentials();
+
+  if (!credentials) {
+    throw new Error('BK Security has not been initialized.');
+  }
+
+  const c = backendCommand();
+
+  const env = backendEnvironment({
+    isPackaged: c.packaged,
+    env: process.env,
+    host,
+    port,
+  });
+
+  env.BK_SECURITY_ENV = c.packaged ? 'production' : (process.env.BK_SECURITY_ENV || 'development');
+  env.BK_SECURITY_AUTH_SECRET = credentials.authSecret;
+  env.BK_SECURITY_ADMIN_PASSWORD = credentials.adminPassword;
+  env.BK_SECURITY_ANALYST_PASSWORD = credentials.analystPassword;
+  env.BK_SECURITY_VIEWER_PASSWORD = credentials.viewerPassword;
+
+  backend = spawn(c.command, c.args, {
+    cwd: c.cwd,
+    windowsHide: true,
+    env,
+  });
+
+  backend.on('error', err => {
+    console.error('[BK Security] Could not start backend:', err.message);
+  });
+
+  backend.on('exit', (code, signal) => {
+    console.error(`[BK Security] Backend exited. code=${code} signal=${signal}`);
+  });
+
+  backend.stdout?.on('data', data => {
+    console.log('[BK Security]', data.toString().trim());
+  });
+
+  backend.stderr?.on('data', data => {
+    console.error('[BK Security]', data.toString().trim());
+  });
+}
+
+function stopBackend() {
+  if (backend && !backend.killed) {
+    backend.kill();
+  }
+
+  backend = null;
+}
+
+function checkBackend() {
+  return new Promise(resolve => {
+    const request = http.get(
+      `http://${host}:${port}/health`,
+      response => {
+        response.resume();
+        resolve(response.statusCode === 200);
+      }
+    );
+
+    request.setTimeout(1000, () => {
+      request.destroy();
+      resolve(false);
+    });
+
+    request.on('error', () => resolve(false));
+  });
+}
+
+async function waitForBackend(timeoutMs = 30000) {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    if (await checkBackend()) return;
+    await new Promise(resolve => setTimeout(resolve, 250));
+  }
+
+  throw new Error(`Timed out waiting for ${host}:${port}`);
+}
+
+ipcMain.handle('backend:status', () => ({
+  running: !!backend && !backend.killed,
+  host,
+  port,
+}));
+
+ipcMain.handle('backend:restart', () => {
+  stopBackend();
+  startBackend();
+  return { running: true };
+});
+
+ipcMain.handle('credentials:status', () => ({
+  configured: credentialsExist(),
+}));
+
+ipcMain.handle('credentials:initialize', (_event, input) => {
+  if (!input || typeof input !== 'object') {
+    throw new Error('Invalid initialization request.');
+  }
+
+  const credentials = {
+    adminPassword: String(input.adminPassword || ''),
+    analystPassword: String(input.analystPassword || ''),
+    viewerPassword: String(input.viewerPassword || ''),
+    authSecret: String(input.authSecret || generateAuthSecret()),
+  };
+
+  validateCredentials(credentials);
+  saveCredentials(credentials);
+
+  return {
+    configured: true,
+    authSecretGenerated: !input.authSecret,
+  };
+});
+
+ipcMain.handle('credentials:repair', () => {
+  stopBackend();
+
+  if (fs.existsSync(credentialFile)) {
+    fs.renameSync(
+      credentialFile,
+      `${credentialFile}.backup-${Date.now()}`
+    );
+  }
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.loadFile(setupPage);
+  }
+
+  return { configured: false };
+});
+
+async function launchApplication() {
+  const repairRequested = process.argv.includes('--repair');
+
+  if (repairRequested) {
+    createSetupWindow();
+    return;
+  }
+
+  let credentials = null;
+
+  try {
+    credentials = loadCredentials();
+  } catch (error) {
+    console.error('[BK Security] Credential store error:', error.message);
+
+    await dialog.showMessageBox({
+      type: 'error',
+      title: 'BK Security',
+      message: 'Impossible de lire la configuration de sécurité.',
+      detail: `${error.message}\n\nUtilisez le mode réparation --repair.`,
+    });
+
+    createSetupWindow();
+    return;
+  }
+
+  if (!credentials) {
+    createSetupWindow();
+    return;
+  }
+
+  createMainWindow();
+
+  try {
+    startBackend();
+    await waitForBackend();
+    await mainWindow.loadURL(`${trustedOrigin}/`);
+  } catch (error) {
+    console.error('[BK Security] Backend did not become ready:', error.message);
+
+    await dialog.showMessageBox({
+      type: 'error',
+      title: 'BK Security - Backend',
+      message: 'Le moteur de sécurité n’a pas démarré.',
+      detail: error.message,
+    });
+
+    await mainWindow.loadFile(fallbackDashboard);
+  }
+}
+
+app.whenReady().then(async () => {
+  session.defaultSession.webRequest.onBeforeSendHeaders((_details, callback) => {
+    callback({ requestHeaders: _details.requestHeaders });
+  });
+
+  await launchApplication();
+});
+
+app.on('before-quit', stopBackend);
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});

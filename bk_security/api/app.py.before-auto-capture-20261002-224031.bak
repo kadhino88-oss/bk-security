@@ -1,0 +1,285 @@
+﻿from __future__ import annotations
+import asyncio, os, sys
+import hmac
+import json
+import math
+from contextlib import asynccontextmanager
+from pathlib import Path
+from fastapi import FastAPI, HTTPException, Depends, Header, Request, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field, field_validator
+from ..core import SecurityCore
+from ..events.models import EventType, SecurityEvent, Severity, utc_now
+from ..incidents.lifecycle import IncidentStatus
+from ..ai.contracts import InvestigationRequest
+from ..auth import Principal, AuthError, issue_token, verify_token
+from ..capture.live import LivePacketCapture
+from ..capture.scenarios import SimulationScenario
+from ..platform_windows import discover_interfaces
+from ..sensors.network import NetworkSensor
+from ..sensors.manager import SensorManager
+from ..sensors.lan import LANDiscoverySensor
+from ..sensors.host_identity import HostIdentitySensor
+from ..sensors.endpoint import EndpointProcessSensor
+from ..sensors.socket import SocketAttributionSensor
+from ..network import build_network_topology
+from .soc_routes import install as install_soc_routes
+from .response_routes import install as install_response_routes
+from .hardening import RequestSizeLimitMiddleware, SecurityHeadersMiddleware, SlidingWindowRateLimiter
+
+core = SecurityCore()
+network_sensor = None
+
+@asynccontextmanager
+async def app_lifespan(_app):
+    yield
+    if network_sensor:
+        network_sensor.stop()
+    manager = getattr(app.state, 'sensor_manager', None)
+    if manager:
+        manager.stop_all()
+    try:
+        await asyncio.to_thread(core.store.close)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('Failed to flush and close the BK Security database writer')
+
+app = FastAPI(title='BK Security API', version='1.0.0', lifespan=app_lifespan)
+def _dashboard_static_path() -> Path:
+    candidates = [
+        Path(__file__).resolve().parents[2] / 'dashboard' / 'static',
+        Path(getattr(sys, '_MEIPASS', '')) / 'dashboard' / 'static' if getattr(sys, '_MEIPASS', None) else Path(),
+        Path(sys.executable).resolve().parent / 'dashboard' / 'static',
+    ]
+    for candidate in candidates:
+        if candidate.is_dir():
+            return candidate
+    return candidates[0]
+
+dashboard_static = _dashboard_static_path()
+if dashboard_static.is_dir():
+    app.mount('/static', StaticFiles(directory=dashboard_static), name='bk-dashboard-static')
+
+    dashboard_assets = dashboard_static / 'assets'
+    if dashboard_assets.is_dir():
+        app.mount('/assets', StaticFiles(directory=dashboard_assets), name='bk-dashboard-assets')
+
+    @app.get('/', include_in_schema=False)
+    async def dashboard_index():
+        return FileResponse(dashboard_static / 'index.html')
+
+origins=[x.strip() for x in os.getenv('BK_SECURITY_CORS_ORIGINS','http://localhost:5173,http://127.0.0.1:5173').split(',') if x.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=['GET','POST','PATCH','OPTIONS'], allow_headers=['Authorization','Content-Type'])
+app.add_middleware(RequestSizeLimitMiddleware, max_bytes=int(os.getenv('BK_SECURITY_MAX_REQUEST_BYTES', '1048576')))
+app.add_middleware(SecurityHeadersMiddleware)
+
+USERS = {'admin': (os.getenv('BK_SECURITY_ADMIN_PASSWORD','admin-dev-only'),'admin'),'analyst': (os.getenv('BK_SECURITY_ANALYST_PASSWORD','analyst-dev-only'),'analyst'),'viewer': (os.getenv('BK_SECURITY_VIEWER_PASSWORD','viewer-dev-only'),'viewer')}
+if os.getenv('BK_SECURITY_ENV') == 'production':
+    if any(value.endswith('-dev-only') for value, _ in USERS.values()):
+        raise RuntimeError('Production credentials must be configured via BK_SECURITY_*_PASSWORD')
+    if any(len(value.encode('utf-8')) < 12 for value, _ in USERS.values()):
+        raise RuntimeError('Production BK_SECURITY_*_PASSWORD values must contain at least 12 UTF-8 bytes')
+    if len({value for value, _ in USERS.values()}) != len(USERS):
+        raise RuntimeError('Production credentials must be unique for each role')
+    if len(os.getenv('BK_SECURITY_AUTH_SECRET', '').encode('utf-8')) < 32:
+        raise RuntimeError('BK_SECURITY_AUTH_SECRET must contain at least 32 UTF-8 bytes in production')
+
+LOGIN_LIMITER = SlidingWindowRateLimiter(
+    int(os.getenv('BK_SECURITY_LOGIN_LIMIT', '5')),
+    float(os.getenv('BK_SECURITY_LOGIN_WINDOW_SECONDS', '60')),
+)
+EVENT_LIMITER = SlidingWindowRateLimiter(
+    int(os.getenv('BK_SECURITY_API_EVENT_LIMIT', '1000')),
+    float(os.getenv('BK_SECURITY_API_EVENT_WINDOW_SECONDS', '60')),
+)
+
+class Login(BaseModel):
+    username: str = Field(min_length=1, max_length=128)
+    password: str = Field(min_length=1, max_length=1024)
+
+class IncidentStatusUpdate(BaseModel):
+    status: IncidentStatus
+
+class CaptureStart(BaseModel):
+    mode: str | None = Field(default=None, pattern="^(live|simulation)$")
+    interface: str | None = Field(default=None, max_length=256)
+    scenario: SimulationScenario | None = None
+
+class EventIn(BaseModel):
+    event_type: EventType
+    source: str = Field(min_length=1, max_length=64)
+    host_id: str = Field(min_length=1, max_length=256)
+    severity: Severity = 'info'
+    data: dict = Field(default_factory=dict)
+    tags: list[str] = Field(default_factory=list, max_length=64)
+    process: dict = Field(default_factory=dict)
+    network: dict = Field(default_factory=dict)
+
+    @field_validator('data', 'process', 'network')
+    @classmethod
+    def limit_event_object_size(cls, value: dict) -> dict:
+        if len(json.dumps(value, default=str).encode('utf-8')) > 65_536:
+            raise ValueError('Event data sections cannot exceed 64 KiB')
+        return value
+
+def enforce_rate_limit(limiter: SlidingWindowRateLimiter, key: str) -> None:
+    allowed, retry_after = limiter.allow(key)
+    if not allowed:
+        raise HTTPException(429, 'Rate limit exceeded', headers={'Retry-After': str(max(1, math.ceil(retry_after)))})
+
+def principal(authorization: str|None=Header(default=None)) -> Principal:
+    if not authorization or not authorization.lower().startswith('bearer '): raise HTTPException(401,'Authentication required')
+    try: return verify_token(authorization.split(' ',1)[1])
+    except AuthError as e: raise HTTPException(401,str(e))
+def require(*roles):
+    def dep(p: Principal=Depends(principal)):
+        if roles and p.role not in roles: raise HTTPException(403,'Insufficient role')
+        return p
+    return dep
+
+def overview():
+    counts={s:0 for s in ('critical','high','medium','low','info')}
+    for a in core.alerts:
+        counts[a.severity]=counts.get(a.severity,0)+1
+    open_inc=[i for i in core.store.list_incidents(500) if str(i.get('status', 'NEW')).upper() not in ('RESOLVED','CLOSED')]
+    hosts=sorted({e.host_id for e in core.events})
+    manager=getattr(app.state,'sensor_manager',None)
+    sensor_status=manager.status() if manager else {'sensors':{},'running':0}
+    return {
+        'alerts':counts,'open_incidents':len(open_inc),'hosts':len(hosts),'events':len(core.events),
+        'network_packets':sum(event.event_type=='network.packet' for event in core.events),
+        'sensors_running':sensor_status.get('running',0),'sensors_total':len(sensor_status.get('sensors',{})),
+        'risk_max':max((a.risk_score for a in core.alerts),default=0),
+    }
+
+install_response_routes(app, core, require)
+install_soc_routes(app, core, require)
+_host_identity = HostIdentitySensor()
+core.store.save_host({**_host_identity.status(), 'last_seen': utc_now()})
+app.state.sensor_manager = SensorManager({
+    "lan": LANDiscoverySensor(core, host_id=_host_identity.identity.host_id),
+    "endpoint_process": EndpointProcessSensor(core, host_id=_host_identity.identity.host_id),
+    "socket_attribution": SocketAttributionSensor(host_id=_host_identity.identity.host_id, core=core),
+})
+@app.get('/health')
+async def health(): return {'status':'ok','product':'BK Security','version':'1.0.0','alerts':len(core.alerts),'incidents':len(core.incidents)}
+@app.post('/api/v1/auth/login')
+async def login(body:Login, request:Request):
+    client_ip = request.client.host if request.client else 'unknown'
+    enforce_rate_limit(LOGIN_LIMITER, f'login:{client_ip}')
+    expected=USERS.get(body.username)
+    expected_password = expected[0] if expected else 'unknown-user-password-sentinel'
+    matches = hmac.compare_digest(body.password.encode('utf-8'), expected_password.encode('utf-8'))
+    if not expected or not matches: raise HTTPException(401,'Invalid credentials')
+    LOGIN_LIMITER.reset(f'login:{client_ip}')
+    token=issue_token(body.username, expected[1]); core.store.audit(body.username,'login')
+    return {'access_token':token,'token_type':'bearer','expires_in':3600,'role':expected[1]}
+
+@app.get('/api/v1/capture/capabilities')
+async def capture_capabilities(p:Principal=Depends(principal)):
+    return {
+        'live_capture_available': LivePacketCapture.available(),
+        'interfaces': [item.__dict__ if hasattr(item, '__dict__') else {
+            'name': item.name, 'description': item.description, 'ipv4': item.ipv4, 'status': item.status,
+        } for item in discover_interfaces()],
+        'simulation_scenarios': [item.value for item in SimulationScenario],
+        'status': network_sensor.status() if network_sensor else {'running':False,'mode':'live'},
+    }
+
+@app.post('/api/v1/capture/start')
+async def capture_start(p:Principal=Depends(require('admin','analyst')), body: CaptureStart | None = None):
+    global network_sensor
+    if network_sensor and network_sensor.running:
+        return {'status':'already_running','sensor':network_sensor.status()}
+    requested_mode = body.mode if body and body.mode else os.getenv('BK_SECURITY_CAPTURE_MODE','live').lower()
+    interface = body.interface if body and body.interface else os.getenv('BK_SECURITY_CAPTURE_INTERFACE') or None
+    scenario = body.scenario.value if body and body.scenario else None
+    if scenario and requested_mode != 'simulation':
+        raise HTTPException(422, 'Simulation scenarios require mode=simulation')
+    network_sensor = NetworkSensor(core, host_id=_host_identity.identity.host_id,
+                                  interface=interface,
+                                  simulation=requested_mode=='simulation',
+                                  max_events_per_second=int(os.getenv('BK_SECURITY_MAX_EVENTS_PER_SECOND','500')),
+                                  scenario=scenario)
+    try:
+        network_sensor.start()
+    except ValueError as exc:
+        raise HTTPException(422, f'Invalid capture configuration: {exc}') from exc
+    except Exception as exc:
+        raise HTTPException(503, f'Capture unavailable: {exc}')
+    return {'status':'started','sensor':network_sensor.status()}
+
+@app.post('/api/v1/capture/stop')
+async def capture_stop(p:Principal=Depends(require('admin','analyst'))):
+    if network_sensor: network_sensor.stop()
+    return {'status':'stopped','sensor':network_sensor.status() if network_sensor else {'running':False}}
+
+@app.get('/api/v1/overview')
+async def get_overview(p:Principal=Depends(principal)): return overview()
+@app.get('/api/v1/alerts')
+async def alerts(p:Principal=Depends(principal)): return {'alerts':[a.to_dict() for a in core.alerts[-200:]]}
+@app.get('/api/v1/incidents')
+async def incidents(p:Principal=Depends(principal)): return {'incidents':core.store.list_incidents(200)}
+@app.patch('/api/v1/incidents/{incident_id}/status')
+async def update_incident_status(incident_id: str, body: IncidentStatusUpdate,
+                                 p:Principal=Depends(require('admin','analyst'))):
+    try:
+        return {'incident': core.transition_incident(incident_id, body.status, p.username)}
+    except LookupError as exc:
+        raise HTTPException(404, 'Incident not found') from exc
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+@app.get('/api/v1/events')
+async def events(p:Principal=Depends(principal)): return {'events':[e.to_dict() for e in core.events[-200:]]}
+@app.get('/api/v1/hosts')
+async def hosts(p:Principal=Depends(principal)):
+    out={str(item['host_id']):{**item,'events':0,'risk':0} for item in core.store.list_hosts(1000)}
+    for e in core.events:
+        item=out.setdefault(e.host_id,{'host_id':e.host_id,'events':0,'last_seen':e.timestamp,'risk':0})
+        item['events']+=1; item['last_seen']=max(item['last_seen'],e.timestamp); item['risk']=max(item['risk'],e.risk_score)
+    return {'hosts':list(out.values())}
+@app.get('/api/v1/audit')
+async def audit(p:Principal=Depends(require('admin','analyst'))): return {'audit':core.store.list_audit(200)}
+@app.post('/api/v1/events')
+async def ingest(body:EventIn,p:Principal=Depends(require('admin','analyst'))):
+    enforce_rate_limit(EVENT_LIMITER, f'events:{p.username}')
+    event=SecurityEvent(event_type=body.event_type,source=body.source,host_id=body.host_id,severity=body.severity,data=body.data,tags=body.tags,process=body.process,network=body.network)
+    alerts=core.ingest(event); core.store.audit(p.username,'ingest_event',event.event_id,{'event_type':event.event_type})
+    return {'event':event.to_dict(),'alerts':[a.to_dict() for a in alerts],'overview':overview()}
+@app.post('/api/v1/alerts/{alert_id}/investigate')
+async def investigate(alert_id:str,p:Principal=Depends(require('admin','analyst'))):
+    alert=next((a for a in core.alerts if a.alert_id==alert_id),None)
+    if alert is None: raise HTTPException(404,'Alert not found')
+    core.store.audit(p.username,'investigate',alert_id)
+    related=[e for e in core.events if e.event_id in alert.source_event_ids or e.host_id == alert.host_id][-200:]
+    intel=next((e.enrichment.get('threat_intel') for e in related if e.enrichment.get('threat_intel')), {})
+    result=core.ai.investigate(InvestigationRequest(alert=alert,related_events=related,threat_context={'threat_intel':intel}))
+    return result.__dict__ if hasattr(result,'__dict__') else result
+
+@app.websocket('/ws/soc')
+async def soc_ws(ws:WebSocket):
+    token=ws.query_params.get('token')
+    try: p=verify_token(token or '')
+    except AuthError: await ws.close(code=1008); return
+    await ws.accept(); last=''
+    try:
+        while True:
+            snapshot={
+                'type':'soc.snapshot',
+                'overview':overview(),
+                'alerts':[a.to_dict() for a in core.alerts[-50:]],
+                'incidents':core.store.list_incidents(50),
+                'brain':build_network_topology(core.events, minutes=15),
+            }
+            import json
+            sig=json.dumps(snapshot,sort_keys=True,default=str)
+            if sig!=last: await ws.send_json(snapshot); last=sig
+            await asyncio.sleep(1)
+    except (WebSocketDisconnect,asyncio.CancelledError): pass
+
+@app.websocket('/ws')
+async def websocket(ws:WebSocket):
+    await soc_ws(ws)
+

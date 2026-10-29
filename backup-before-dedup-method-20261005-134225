@@ -1,0 +1,352 @@
+﻿from __future__ import annotations
+import os
+from .detection.rules import DetectionEngine
+from .detection.behavior import BehaviorEngine
+from .detection.correlation import CorrelationEngine
+from .events.bus import SecurityEventBus
+from .events.models import SecurityAlert, SecurityEvent
+from .detection.risk import RiskEngine
+from .policy.engine import ResponsePolicy
+from .policy.response import ResponseEngine
+from .policy.windows_adapters import build_windows_adapters
+from .incidents import SecurityIncident
+from .incidents.lifecycle import INCIDENT_STATUSES, normalize_incident_status, transition_incident
+from .intelligence import ThreatIntelEngine
+from .detection.mitre import techniques_for_event
+from .ai.orchestrator import SecurityOrchestrator
+from .ai.workers.builtin import ThreatAnalyst, NetworkAnalyst, ProcessAnalyst, BehaviorAnalyst, IncidentAnalyst, ThreatIntelAnalyst, ForensicsAnalyst, SecurityReporter
+from .database import SecurityRepository, SecurityStore
+from collections import OrderedDict, defaultdict
+from datetime import datetime, timezone
+import threading
+import hashlib
+
+class SecurityCore:
+    """BK Security decision core: normalize -> behavior -> detect -> correlate -> incident."""
+    def __init__(self, store: SecurityRepository | None = None) -> None:
+        self.store: SecurityRepository = store if store is not None else SecurityStore()
+        self.bus = SecurityEventBus(); self.risk = RiskEngine()
+        self.behavior = BehaviorEngine(); self.detector = DetectionEngine(self.risk)
+        self.correlation = CorrelationEngine(); self.policy = ResponsePolicy(); self.response = ResponseEngine(adapters=build_windows_adapters() if os.name == 'nt' and os.getenv('BK_SECURITY_WINDOWS_RESPONSE', '0') == '1' else {})
+        self.threat_intel = ThreatIntelEngine()
+        self.ai = SecurityOrchestrator([ThreatAnalyst(), NetworkAnalyst(), ProcessAnalyst(), BehaviorAnalyst(), IncidentAnalyst(), ThreatIntelAnalyst(), ForensicsAnalyst(), SecurityReporter()])
+        for action in self.store.list_response_actions(500):
+            execution_id = action.get("execution_id") or action.get("action_id")
+            if execution_id and action.get("action"):
+                self.response.executions[str(execution_id)] = action
+        self._state_lock = threading.RLock()
+        self.events = self._restore_records(self.store.list_events(5000), SecurityEvent)[-5000:]
+        self.alerts = self._restore_records(self.store.list_alerts(5000), SecurityAlert)[-5000:]
+        # The repository exposes incidents newest-first for the SOC API. Keep
+        # the core's in-memory history chronological, matching events/alerts.
+        incident_records = self.store.list_incidents(10_000)
+        self.incidents = self._restore_records(reversed(incident_records), SecurityIncident)[-5000:]
+        active_incident_ids: set[str] = set()
+        for incident in self.incidents:
+            try:
+                normalized = normalize_incident_status(incident.status)
+            except ValueError:
+                continue
+            if normalized != incident.status:
+                incident.status = normalized
+                self.store.save_incident(incident)
+            if normalized not in {"RESOLVED", "CLOSED"}:
+                active_incident_ids.add(incident.incident_id)
+        self._incident_index: dict[str, SecurityIncident] = {
+            incident.incident_id: incident for incident in self.incidents
+            if incident.incident_id in active_incident_ids
+        }
+        # Correlation clusters use transient keys for new incidents and durable
+        # incident IDs after restore. Keep the mapping explicit so a cluster can
+        # never accidentally collapse unrelated incidents.
+        self._correlation_incidents: dict[str, str] = {
+            incident_id: incident_id for incident_id in active_incident_ids
+        }
+        self._incident_correlation_keys: defaultdict[str, set[str]] = defaultdict(set)
+        for incident_id in active_incident_ids:
+            self._incident_correlation_keys[incident_id].add(incident_id)
+
+        # Low/info telemetry can be extremely repetitive on a live network.
+        # Deduplicate only low-value alerts; medium/high/critical alerts remain
+        # independently observable and are still correlated into incidents.
+        self._alert_dedup_window_seconds = 300
+        self._alert_dedup: OrderedDict[str, tuple[str, float]] = OrderedDict()
+        for alert in self.alerts:
+            if alert.severity in {"info", "low"}:
+                self._alert_dedup[self._alert_fingerprint(alert)] = (
+                    alert.alert_id, self._event_epoch(alert.timestamp)
+                )
+        while len(self._alert_dedup) > 5000:
+            self._alert_dedup.popitem(last=False)
+
+        self.correlation.restore(self.alerts, active_incident_ids)
+        self._dns_context: OrderedDict[str, dict[str, tuple[str, float, str]]] = OrderedDict()
+        # Enterprise alert deduplication is opt-in so the existing detection
+        # contract and test suite remain unchanged until production policy enables it.
+        self._alert_fingerprints: OrderedDict[str, float] = OrderedDict()
+        self._alert_dedup_window = max(30.0, float(os.getenv("BK_SECURITY_ALERT_DEDUP_WINDOW", "300")))
+        for event in self.events:
+            if event.event_type == "network.dns":
+                self._remember_dns(event, self._event_epoch(event.timestamp))
+        self.bus.subscribe("*", self._on_event)
+
+    @staticmethod
+    def _restore_records(records, model):
+        restored = []
+        for record in records:
+            try:
+                restored.append(model(**record))
+            except (TypeError, ValueError):
+                continue
+        return restored
+
+    @staticmethod
+    def _event_epoch(timestamp: str) -> float:
+        try:
+            parsed = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed.timestamp()
+        except (AttributeError, TypeError, ValueError, OverflowError):
+            return datetime.now(timezone.utc).timestamp()
+
+    @staticmethod
+    def _alert_fingerprint(alert: SecurityAlert) -> str:
+        """Fingerprint the security condition, not an individual packet."""
+        evidence: dict[str, str] = {}
+        for item in alert.evidence:
+            field_name = str(item.get("field") or "").strip().lower()
+            value = item.get("value")
+            if value is None or value == "":
+                continue
+            if field_name in {
+                "process", "destination_port", "destination_domain", "anomaly"
+            }:
+                evidence[field_name] = str(value).strip().lower()
+
+        # For info/low network behavior, destination IP is intentionally not
+        # part of the fingerprint: a stream of first-seen destinations is one
+        # behavioral condition, not one incident per destination.
+        payload = "|".join([
+            str(alert.host_id).strip().lower(),
+            str(alert.alert_type).strip().upper(),
+            evidence.get("process", ""),
+            evidence.get("destination_port", ""),
+            evidence.get("destination_domain", ""),
+            evidence.get("anomaly", ""),
+            ",".join(sorted(str(x).upper() for x in alert.mitre_techniques if x)),
+        ])
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    def _deduplicate_low_alert(
+        self, alert: SecurityAlert, now: float
+    ) -> SecurityAlert | None:
+        if alert.severity not in {"info", "low"}:
+            return None
+
+        fingerprint = self._alert_fingerprint(alert)
+        previous = self._alert_dedup.get(fingerprint)
+        if previous is None:
+            self._alert_dedup[fingerprint] = (alert.alert_id, now)
+            self._alert_dedup.move_to_end(fingerprint)
+            return None
+
+        alert_id, seen = previous
+        if now - seen > self._alert_dedup_window_seconds:
+            self._alert_dedup[fingerprint] = (alert.alert_id, now)
+            self._alert_dedup.move_to_end(fingerprint)
+            return None
+
+        existing = next((item for item in self.alerts if item.alert_id == alert_id), None)
+        if existing is None:
+            self._alert_dedup[fingerprint] = (alert.alert_id, now)
+            self._alert_dedup.move_to_end(fingerprint)
+            return None
+
+        # Merge evidence/source-event references without manufacturing a new
+        # alert. Keep the strongest observed risk and latest timestamp.
+        existing.source_event_ids = list(dict.fromkeys(
+            [*existing.source_event_ids, *alert.source_event_ids]
+        ))[-64:]
+        existing.evidence = list(existing.evidence)
+        for item in alert.evidence:
+            if item not in existing.evidence and len(existing.evidence) < 64:
+                existing.evidence.append(item)
+        existing.risk_score = max(existing.risk_score, alert.risk_score)
+        existing.confidence = max(existing.confidence, alert.confidence)
+        existing.timestamp = alert.timestamp
+
+        self._alert_dedup[fingerprint] = (existing.alert_id, now)
+        self._alert_dedup.move_to_end(fingerprint)
+        return existing
+
+    def _remember_dns(self, event: SecurityEvent, event_epoch: float) -> None:
+        domain = str(event.data.get("domain") or "").strip().lower().rstrip(".")
+        if not domain:
+            return
+        host_dns = self._dns_context.setdefault(event.host_id, {})
+        self._dns_context.move_to_end(event.host_id)
+        while len(self._dns_context) > 256:
+            self._dns_context.popitem(last=False)
+        for answer in event.data.get("answers") or []:
+            address = str(answer).strip()
+            if address:
+                host_dns[address] = (domain, event_epoch, event.event_id)
+        stale = [address for address, (_, seen, _) in host_dns.items() if event_epoch - seen > 3600]
+        for address in stale:
+            host_dns.pop(address, None)
+        if len(host_dns) > 1024:
+            oldest = sorted(host_dns.items(), key=lambda item: item[1][1])
+            for address, _ in oldest[:len(host_dns) - 1024]:
+                host_dns.pop(address, None)
+
+    def ingest(self, event: SecurityEvent) -> list[SecurityAlert]:
+        with self._state_lock:
+            before = len(self.alerts)
+            self.bus.publish(event)
+            return self.alerts[before:]
+
+    def execute_response(self, execution_id: str, action, target: str, reason: str,
+                         approved: bool = False, dry_run: bool = True) -> dict:
+        """Run a policy-gated response action and persist its execution record."""
+        with self._state_lock:
+            result = self.response.execute(execution_id, action, target, reason, approved, dry_run)
+            self.store.save_response_action(result)
+            return result
+
+    def rollback_response(self, execution_id: str) -> dict:
+        """Attempt rollback and persist the updated execution record when present."""
+        with self._state_lock:
+            result = self.response.rollback(execution_id)
+            execution = self.response.executions.get(execution_id)
+            if execution:
+                self.store.save_response_action(execution)
+            return result
+
+    def transition_incident(self, incident_id: str, status: str, actor: str) -> dict:
+        with self._state_lock:
+            incident = next((item for item in self.incidents if item.incident_id == incident_id), None)
+            if incident is None:
+                raise LookupError("Incident not found")
+            old_status = incident.status
+            old_updated = incident.updated_at
+            previous, target = transition_incident(incident, status)
+            try:
+                self.store.record_incident_transition(incident, actor, previous, target)
+            except Exception:
+                incident.status = old_status
+                incident.updated_at = old_updated
+                raise
+
+            if target in {"RESOLVED", "CLOSED"}:
+                for key in self._incident_correlation_keys.pop(incident_id, set()):
+                    self._correlation_incidents.pop(key, None)
+                    self.correlation.discard_incident(key)
+                self.correlation.discard_incident(incident_id)
+                self._incident_index.pop(incident_id, None)
+            else:
+                self._incident_index[incident_id] = incident
+                self._correlation_incidents[incident_id] = incident_id
+                self._incident_correlation_keys[incident_id].add(incident_id)
+                self.correlation.restore(self.alerts, {incident_id})
+            return incident.to_dict()
+
+    def _on_event(self, event: SecurityEvent) -> None:
+        self.events.append(event)
+        self.events = self.events[-5000:]
+        event_epoch = self._event_epoch(event.timestamp)
+
+        if event.event_type == "network.dns":
+            self._remember_dns(event, event_epoch)
+        elif event.event_type == "network.packet":
+            destination = str(event.data.get("dst_ip") or event.network.get("dst_ip") or "").strip()
+            context = self._dns_context.get(event.host_id, {}).get(destination)
+            if context:
+                domain, seen, dns_event_id = context
+                age = event_epoch - seen
+                if 0 <= age <= 3600:
+                    event.data.setdefault("domain", domain)
+                    related = list(event.data.get("related_event_ids") or [])
+                    if dns_event_id not in related:
+                        related.append(dns_event_id)
+                    event.data["related_event_ids"] = related[-32:]
+        intel = self.threat_intel.enrich_event(event)
+        if intel:
+            event.enrichment["threat_intel"] = intel
+            event.data["indicator_score"] = max(float(event.data.get("indicator_score", 0)), min(100, intel["confidence"] * 100))
+        event.data["mitre_techniques"] = techniques_for_event(event)
+        finding = self.behavior.evaluate(event)
+        if finding.score:
+            event.data["behavior_score"] = max(float(event.data.get("behavior_score", 0)), finding.score)
+            event.data["behavior_reasons"] = finding.reasons
+        pending_alerts: list[SecurityAlert] = []
+        pending_incidents: dict[str, SecurityIncident] = {}
+        for alert in self.detector.evaluate(event):
+            if self._dedup_alert(alert, event_epoch):
+                continue
+            duplicate = self._deduplicate_low_alert(alert, event_epoch)
+            if duplicate is not None:
+                # The event is still fully retained by the event pipeline. Only
+                # the alert/incident cardinality is collapsed.
+                event.risk_score = max(event.risk_score, duplicate.risk_score)
+                pending_alerts.append(duplicate)
+                if duplicate.correlation_id:
+                    incident = self._incident_index.get(duplicate.correlation_id)
+                    if incident is not None:
+                        incident.updated_at = event.timestamp
+                        incident.risk_score = max(incident.risk_score, duplicate.risk_score)
+                        incident.severity = self.risk.severity(incident.risk_score)
+                        pending_incidents[incident.incident_id] = incident
+                continue
+
+            corr = self.correlation.add(alert)
+            if corr.score_bonus:
+                alert.risk_score = min(100, alert.risk_score + corr.score_bonus)
+                alert.severity = self.risk.severity(alert.risk_score)
+
+            self.alerts.append(alert)
+            pending_alerts.append(alert)
+
+            incident_id = self._correlation_incidents.get(corr.incident_key)
+            incident = self._incident_index.get(incident_id) if incident_id else None
+
+            if incident is None:
+                incident = SecurityIncident(
+                    title=alert.title,
+                    host_id=event.host_id,
+                    severity=alert.severity,
+                    risk_score=alert.risk_score,
+                )
+                self.incidents.append(incident)
+                self._incident_index[incident.incident_id] = incident
+                self._correlation_incidents[corr.incident_key] = incident.incident_id
+                self._incident_correlation_keys[incident.incident_id].add(corr.incident_key)
+
+            incident.alert_ids = list(dict.fromkeys(
+                [*incident.alert_ids, *corr.related_alert_ids]
+            ))[-100:]
+
+            for related in self.alerts:
+                if related.alert_id in incident.alert_ids:
+                    related.correlation_id = incident.incident_id
+
+            incident.risk_score = max(incident.risk_score, alert.risk_score)
+            incident.mitre_techniques = sorted(set(
+                incident.mitre_techniques + alert.mitre_techniques
+            ))
+            incident.summary = (
+                f"{len(incident.alert_ids)} correlated alert(s); "
+                f"risk {incident.risk_score}; MITRE "
+                f"{', '.join(incident.mitre_techniques) or 'none'}."
+            )
+            incident.severity = self.risk.severity(incident.risk_score)
+            incident.updated_at = event.timestamp
+            event.risk_score = max(event.risk_score, alert.risk_score)
+            pending_incidents[incident.incident_id] = incident
+        self.alerts = self.alerts[-5000:]
+        self.store.persist_ingest(event, pending_alerts, pending_incidents.values())
+
+
+
+
+

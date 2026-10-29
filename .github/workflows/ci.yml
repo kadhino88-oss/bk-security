@@ -1,0 +1,49 @@
+name: BK Security CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows-validation:
+    runs-on: windows-latest
+    env:
+      BK_SECURITY_WINDOWS_RESPONSE: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install backend dependencies
+        run: python -m pip install -r requirements-build.lock
+      - name: Critical security regression gate
+        run: >-
+          python -m pytest -q
+          tests/test_security_reliability.py
+          tests/test_security_golden_scenarios.py
+          tests/test_ai_soc_contracts.py
+          tests/test_threat_family.py
+          tests/test_brain_mode_contract.py
+          tests/test_incident_lifecycle.py
+          tests/test_response_api.py
+      - name: Unit and integration tests
+        run: python -m pytest --basetemp "$env:RUNNER_TEMP\bk-security-pytest" -q
+      - name: Compile Python sources
+        run: python -m compileall -q bk_security tests scripts
+      - name: Build SOC dashboard
+        working-directory: dashboard
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+      - name: Electron security and launch-policy tests
+        working-directory: electron
+        run: |
+          npm ci --no-audit --no-fund
+          npm test
+      - name: Restart, sensor, lifecycle and simulation E2E
+        run: python scripts/validate_restart_e2e.py

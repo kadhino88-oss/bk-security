@@ -1,0 +1,158 @@
+﻿<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BK Security — Initialisation</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  background:#090909;
+  color:#f4f4f4;
+  font-family:Segoe UI,Arial,sans-serif;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.card{
+  width:min(620px,92vw);
+  padding:38px;
+  border:1px solid #2b2b2b;
+  border-radius:18px;
+  background:#111;
+  box-shadow:0 25px 80px rgba(0,0,0,.55);
+}
+.logo{
+  font-size:30px;
+  font-weight:800;
+  letter-spacing:2px;
+}
+.logo span{color:#d4a017}
+.subtitle{
+  margin:8px 0 28px;
+  color:#999;
+  font-size:13px;
+  letter-spacing:1px;
+}
+h1{font-size:23px;margin:0 0 10px}
+p{color:#aaa;font-size:14px;line-height:1.55}
+label{
+  display:block;
+  margin-top:17px;
+  margin-bottom:7px;
+  font-size:12px;
+  color:#bbb;
+}
+input{
+  width:100%;
+  padding:13px 14px;
+  border-radius:9px;
+  border:1px solid #333;
+  background:#181818;
+  color:#fff;
+  outline:none;
+}
+input:focus{border-color:#d4a017}
+button{
+  width:100%;
+  margin-top:25px;
+  padding:14px;
+  border:0;
+  border-radius:9px;
+  background:#d4a017;
+  color:#090909;
+  font-weight:800;
+  cursor:pointer;
+}
+button:disabled{opacity:.5;cursor:wait}
+#error{
+  display:none;
+  margin-top:15px;
+  padding:12px;
+  border-radius:8px;
+  background:#351515;
+  color:#ffb0b0;
+  font-size:13px;
+}
+.note{
+  margin-top:18px;
+  font-size:11px;
+  color:#777;
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">BK <span>SECURITY</span></div>
+  <div class="subtitle">AI SECURITY OPERATIONS CENTER</div>
+
+  <h1>Initialisation de sécurité</h1>
+  <p>
+    Cette installation ne possède pas encore de configuration locale.
+    Créez des mots de passe distincts pour les cinq rôles. Le secret d’authentification sera
+    généré automatiquement et stocké dans le coffre sécurisé Windows.
+  </p>
+
+  <form id="setup">
+    <label>Mot de passe Administrateur</label>
+    <input id="admin" type="password" minlength="12" required autocomplete="new-password">
+
+    <label>Mot de passe Analyste</label>
+    <input id="analyst" type="password" minlength="12" required autocomplete="new-password">
+
+    <label>Mot de passe Viewer</label>
+    <input id="viewer" type="password" minlength="12" required autocomplete="new-password">
+
+    <label>Mot de passe Approbateur</label>
+    <input id="approver" type="password" minlength="12" required autocomplete="new-password">
+
+    <label>Mot de passe Répondeur</label>
+    <input id="responder" type="password" minlength="12" required autocomplete="new-password">
+
+    <button id="submit" type="submit">INITIALISER BK SECURITY</button>
+    <div id="error"></div>
+  </form>
+
+  <div class="note">
+    Chaque mot de passe doit contenir au moins 12 caractères et au moins 6 caractères différents. Les cinq doivent être différents et seront stockés chiffrés par le coffre sécurisé Windows.
+  </div>
+</div>
+
+<script>
+const form = document.getElementById('setup');
+const button = document.getElementById('submit');
+const error = document.getElementById('error');
+
+form.addEventListener('submit', async event => {
+  event.preventDefault();
+
+  error.style.display = 'none';
+  button.disabled = true;
+
+  try {
+    const result = await window.bkSecurity.initializeCredentials({
+      adminPassword: document.getElementById('admin').value,
+      analystPassword: document.getElementById('analyst').value,
+      viewerPassword: document.getElementById('viewer').value,
+      approverPassword: document.getElementById('approver').value,
+      responderPassword: document.getElementById('responder').value
+    });
+
+    if (!result?.configured) {
+      throw new Error('La configuration n’a pas été enregistrée.');
+    }
+
+    button.textContent = 'Demarrage du SOC...';
+  } catch (err) {
+    error.textContent = err.message || 'Erreur pendant l’initialisation.';
+    error.style.display = 'block';
+    button.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

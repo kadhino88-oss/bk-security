@@ -1,0 +1,40 @@
+name: BK Security Windows package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  unsigned-installer:
+    runs-on: windows-latest
+    env:
+      BK_SECURITY_WINDOWS_RESPONSE: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked Python build dependencies
+        run: python -m pip install -r requirements-build.lock
+      - name: Install locked dashboard dependencies
+        working-directory: dashboard
+        run: npm ci --no-audit --no-fund
+      - name: Install locked Electron dependencies
+        working-directory: electron
+        run: npm ci --no-audit --no-fund
+      - name: Build and gate backend, dashboard and NSIS installer
+        shell: pwsh
+        run: .\scripts\build_windows.ps1
+      - name: Upload unsigned installer and gate report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bk-security-windows-installer
+          path: |
+            dist/windows-*/*.exe
+            dist/windows-*/gate-state/release-gate.json
+            dist/windows-*/release-manifest.json
+            dist/windows-*/build-metadata.json
+          if-no-files-found: error
+          retention-days: 14

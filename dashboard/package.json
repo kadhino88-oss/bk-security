@@ -1,0 +1,13 @@
+{
+  "name": "bk-security-soc",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {"build": "vite build", "test": "node --test src/traffic-triage.test.js src/brain-visuals.test.js src/alert-sound.test.js src/capture-controls.test.js src/response-activity.test.js src/monthly-audit.test.js src/auth-session.test.js src/admin-sessions.test.js"},
+  "dependencies": {
+    "@vitejs/plugin-react": "^6.0.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "vite": "^8.3.0"
+  }
+}

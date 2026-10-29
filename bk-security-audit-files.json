@@ -1,0 +1,874 @@
+﻿[
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\AGENTS.md",
+        "Length":  1071
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\ARCHITECTURE.md",
+        "Length":  1955
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-before-dedup-method-20261005-134225",
+        "Length":  17691
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-fix-dedup-20261005-135500",
+        "Length":  17691
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk-security-audit-files.json",
+        "Length":  107445
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\BK-Security-Enterprise-Decision-Upgrade.ps1",
+        "Length":  4112
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\BK-Security-Enterprise-Response-Upgrade.ps1",
+        "Length":  7410
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\BUNDLE-MANIFEST.sha256",
+        "Length":  13966
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\LICENSE-THIRD-PARTY-ORBIS.txt",
+        "Length":  1549
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\NOTICE-ORIGINS.md",
+        "Length":  730
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\pyproject.toml",
+        "Length":  567
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\README.md",
+        "Length":  5542
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\README_V11_ADDENDUM.md",
+        "Length":  270
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\requirements-build.lock",
+        "Length":  600
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\VERSION",
+        "Length":  6
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\.github\\workflows\\ci.yml",
+        "Length":  1551
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\.github\\workflows\\windows-package.yml",
+        "Length":  1302
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-before-credentials-20261001-215402\\backend-command.js",
+        "Length":  817
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-before-credentials-20261001-215402\\electron-builder.config.js",
+        "Length":  986
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-before-credentials-20261001-215402\\main.js",
+        "Length":  3618
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-before-credentials-20261001-215402\\preload.js",
+        "Length":  231
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-enterprise-decision-20261005-132937\\core.py",
+        "Length":  17268
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-enterprise-response-20261004-094614\\core.py",
+        "Length":  17067
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-171537\\bk_security\\core.py",
+        "Length":  19529
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-171537\\bk_security\\reliability.py",
+        "Length":  38018
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-171537\\bk_security\\api\\app.py",
+        "Length":  17529
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-171537\\bk_security\\api\\response_routes.py",
+        "Length":  1910
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-171537\\bk_security\\database\\store.py",
+        "Length":  21259
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-171537\\bk_security\\policy\\engine.py",
+        "Length":  908
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-171537\\bk_security\\policy\\response.py",
+        "Length":  2913
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-171537\\bk_security\\policy\\windows_adapters.py",
+        "Length":  5777
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-171537\\scripts\\release_gate.py",
+        "Length":  7809
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-171537\\scripts\\validate_restart_e2e.py",
+        "Length":  16102
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-171537\\tests\\test_persistence.py",
+        "Length":  5853
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-171537\\tests\\test_response_api.py",
+        "Length":  333
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-171537\\tests\\test_response_engine.py",
+        "Length":  812
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-185303\\bk_security\\core.py",
+        "Length":  25742
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-185303\\bk_security\\reliability.py",
+        "Length":  38286
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-185303\\bk_security\\api\\app.py",
+        "Length":  17782
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-185303\\bk_security\\api\\response_routes.py",
+        "Length":  4621
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-185303\\bk_security\\database\\store.py",
+        "Length":  21688
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-185303\\bk_security\\policy\\engine.py",
+        "Length":  3237
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-185303\\bk_security\\policy\\response.py",
+        "Length":  16693
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-185303\\bk_security\\policy\\windows_adapters.py",
+        "Length":  11663
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-185303\\docs\\RESPONSE_POLICY_PHASE5.md",
+        "Length":  2896
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-185303\\scripts\\release_gate.py",
+        "Length":  7893
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-185303\\scripts\\validate_restart_e2e.py",
+        "Length":  16219
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-185303\\tests\\test_persistence.py",
+        "Length":  7168
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-185303\\tests\\test_response_api.py",
+        "Length":  7231
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-185303\\tests\\test_response_engine.py",
+        "Length":  11060
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase5-prechange-20261006-185303\\tests\\test_windows_response_adapters.py",
+        "Length":  2842
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase6-prechange-20261006\\bk_security\\capture\\live.py",
+        "Length":  6169
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-phase6-prechange-20261006\\tests\\test_capture_pipeline.py",
+        "Length":  5091
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-reliability-20261006\\app.py",
+        "Length":  16409
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-reliability-20261006\\contracts.py",
+        "Length":  993
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-reliability-20261006\\orchestrator.py",
+        "Length":  1231
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-reliability-20261006\\release_gate.py",
+        "Length":  1712
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-reliability-20261006\\store.py",
+        "Length":  21259
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-threat-family-20261006-131719\\core.py",
+        "Length":  17268
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-threat-family-20261006-131719\\models.py",
+        "Length":  840
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-threat-family-core-20261006-132915\\core.py",
+        "Length":  17268
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-threat-family-final-20261006-145743\\core.py",
+        "Length":  19529
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\backup-threat-family-final-20261006-145743\\models.py",
+        "Length":  1020
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\configuration.py",
+        "Length":  3292
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\core.py",
+        "Length":  27084
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\desktop_backend.py",
+        "Length":  437
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\intelligence.py",
+        "Length":  2461
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\platform_windows.py",
+        "Length":  2250
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\reliability.py",
+        "Length":  38286
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\runtime.py",
+        "Length":  944
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\__init__.py",
+        "Length":  0
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\ai\\contracts.py",
+        "Length":  3839
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\ai\\orchestrator.py",
+        "Length":  8885
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\ai\\workers\\builtin.py",
+        "Length":  3495
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\api\\app.py",
+        "Length":  18373
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\api\\app.py.before-auto-capture-20261002-224031.bak",
+        "Length":  14982
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\api\\hardening.py",
+        "Length":  5273
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\api\\reliability_routes.py",
+        "Length":  3234
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\api\\response_routes.py",
+        "Length":  4825
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\api\\soc_routes.py",
+        "Length":  7773
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\auth\\security.py",
+        "Length":  1674
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\auth\\__init__.py",
+        "Length":  70
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\capture\\live.py",
+        "Length":  6435
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\capture\\models.py",
+        "Length":  734
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\capture\\pipeline.py",
+        "Length":  5208
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\capture\\scenarios.py",
+        "Length":  4472
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\capture\\simulation.py",
+        "Length":  488
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\capture\\__init__.py",
+        "Length":  220
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\database\\store.py",
+        "Length":  21688
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\database\\__init__.py",
+        "Length":  53
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\detection\\behavior.py",
+        "Length":  2959
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\detection\\correlation.py",
+        "Length":  7682
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\detection\\mitre.py",
+        "Length":  819
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\detection\\risk.py",
+        "Length":  1227
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\detection\\rules.py",
+        "Length":  6873
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\detection\\__init__.py",
+        "Length":  0
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\events\\adapters.py",
+        "Length":  4424
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\events\\bus.py",
+        "Length":  977
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\events\\models.py",
+        "Length":  1768
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\events\\__init__.py",
+        "Length":  0
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\incidents\\lifecycle.py",
+        "Length":  1506
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\incidents\\models.py",
+        "Length":  1020
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\incidents\\__init__.py",
+        "Length":  66
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\network\\topology.py",
+        "Length":  5923
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\network\\__init__.py",
+        "Length":  83
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\policy\\adapters.py",
+        "Length":  595
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\policy\\engine.py",
+        "Length":  3237
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\policy\\response.py",
+        "Length":  17921
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\policy\\windows_adapters.py",
+        "Length":  11663
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\policy\\__init__.py",
+        "Length":  80
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\sensors\\bridge.py",
+        "Length":  3393
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\sensors\\dns.py",
+        "Length":  1286
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\sensors\\endpoint.py",
+        "Length":  4322
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\sensors\\host_identity.py",
+        "Length":  963
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\sensors\\lan.py",
+        "Length":  5753
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\sensors\\manager.py",
+        "Length":  1668
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\sensors\\network.py",
+        "Length":  3351
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\sensors\\periodic.py",
+        "Length":  2720
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\sensors\\socket.py",
+        "Length":  4922
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\bk_security\\sensors\\__init__.py",
+        "Length":  414
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\dashboard\\index.html",
+        "Length":  73
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\dashboard\\package-lock.json",
+        "Length":  26682
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\dashboard\\package.json",
+        "Length":  267
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\dashboard\\README.md",
+        "Length":  207
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\dashboard\\vite.config.js",
+        "Length":  211
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\dashboard\\src\\main.jsx",
+        "Length":  17680
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\dashboard\\src\\style.css",
+        "Length":  7995
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\dashboard\\static\\index.html",
+        "Length":  170
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\dashboard\\static\\assets\\index-B1XtPlvC.js",
+        "Length":  234088
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\dashboard\\static\\assets\\index-CD1x8If_.css",
+        "Length":  7968
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\docs\\BK_PRODUCT_ARCHITECTURE.md",
+        "Length":  4093
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\docs\\BK_SECURITY_V1_ARCHITECTURE_TECHNICAL_SPEC.txt",
+        "Length":  33234
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\docs\\ENVIRONMENT_VALIDATION_20261001.md",
+        "Length":  3910
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\docs\\PERFORMANCE_VALIDATION_20261001.md",
+        "Length":  1816
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\docs\\PHASE6_CONTROLLED_RESPONSE_ACTIVATION_PROTOCOL.md",
+        "Length":  3547
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\docs\\PHASE6_REAL_WORLD_VALIDATION.md",
+        "Length":  5732
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\docs\\PHASE7_PRODUCTION_HARDENING_RELEASE_V1.md",
+        "Length":  5744
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\docs\\PROVENANCE_STATUS.md",
+        "Length":  1256
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\docs\\R15_CHANGES.md",
+        "Length":  1242
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\docs\\R6_TO_R7_CHANGES.md",
+        "Length":  1349
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\docs\\RESPONSE_POLICY_PHASE5.md",
+        "Length":  2896
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\docs\\SECURITY_RELIABILITY.md",
+        "Length":  4695
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\docs\\V1_RELEASE_CHECKLIST.md",
+        "Length":  2521
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\docs\\WINDOWS_PRODUCTION_SETUP.md",
+        "Length":  3735
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\backend-command.js",
+        "Length":  3132
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\backend-supervisor.js",
+        "Length":  2895
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\config.json",
+        "Length":  201
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\electron-builder.config.js",
+        "Length":  2155
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\integrity-manifest.js",
+        "Length":  3499
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\main.js",
+        "Length":  16496
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\main.js.bak-20261002-115252",
+        "Length":  9999
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\package-lock.json",
+        "Length":  152566
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\package.json",
+        "Length":  992
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\preload.js",
+        "Length":  485
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\runtime-log.js",
+        "Length":  2024
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\security-policy.js",
+        "Length":  833
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\setup.html",
+        "Length":  4309
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\setup.html.bak-20261002-115252",
+        "Length":  3644
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\test\\backend-supervisor.test.js",
+        "Length":  2356
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\test\\integrity-manifest.test.js",
+        "Length":  3921
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\test\\run.js",
+        "Length":  969
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\test\\runtime-log.test.js",
+        "Length":  1312
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\electron\\test\\security-policy.test.js",
+        "Length":  4755
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\apply_threat_family.py",
+        "Length":  6441
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\apply_threat_family_core.py",
+        "Length":  4081
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\benchmark_ingest.py",
+        "Length":  3746
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\build_windows.ps1",
+        "Length":  11814
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\configure_windows_production.ps1",
+        "Length":  2638
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\finalize_threat_family.py",
+        "Length":  12005
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\package_consolidated.py",
+        "Length":  3093
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\preflight_windows.ps1",
+        "Length":  1190
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\production_runtime_check.py",
+        "Length":  1489
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\release_gate.py",
+        "Length":  17361
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\release_manifest.py",
+        "Length":  5661
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\run_dev.ps1",
+        "Length":  103
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\validate_live_loopback_capture.py",
+        "Length":  3663
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\validate_live_loopback_soc.py",
+        "Length":  7491
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\validate_packaged_backend.py",
+        "Length":  7830
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\validate_restart_e2e.py",
+        "Length":  16295
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\validate_windows.ps1",
+        "Length":  2115
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\verify_build_environment.py",
+        "Length":  1470
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\scripts\\verify_packaged_release.js",
+        "Length":  5238
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\conftest.py",
+        "Length":  568
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_adapters.py",
+        "Length":  1141
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_ai_soc_contracts.py",
+        "Length":  9050
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_behavior_correlation.py",
+        "Length":  2665
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_bk_network_topology.py",
+        "Length":  6789
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_brain_mode_contract.py",
+        "Length":  2126
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_capture_pipeline.py",
+        "Length":  6506
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_correlation.py",
+        "Length":  681
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_dashboard_contract.py",
+        "Length":  608
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_desktop_shutdown.py",
+        "Length":  994
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_electron_contract.py",
+        "Length":  2440
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_electron_packaging_contract.py",
+        "Length":  551
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_hardening.py",
+        "Length":  5128
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_incident_lifecycle.py",
+        "Length":  4713
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_lan_sensor.py",
+        "Length":  2473
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_periodic_sensors.py",
+        "Length":  4157
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_persistence.py",
+        "Length":  8090
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_platform_windows.py",
+        "Length":  885
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_production_configuration.py",
+        "Length":  3232
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_production_preflight.py",
+        "Length":  514
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_release_build_config.py",
+        "Length":  5067
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_release_manifest.py",
+        "Length":  1932
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_response_api.py",
+        "Length":  8008
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_response_engine.py",
+        "Length":  11060
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_runtime_lifecycle.py",
+        "Length":  306
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_security_core.py",
+        "Length":  1488
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_security_golden_scenarios.py",
+        "Length":  1427
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_security_reliability.py",
+        "Length":  9101
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_sensor_manager.py",
+        "Length":  618
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_sensor_pipeline.py",
+        "Length":  1620
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_socket_attribution.py",
+        "Length":  1970
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_threat_family.py",
+        "Length":  4289
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_threat_intel_ai.py",
+        "Length":  917
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_v1_consolidation.py",
+        "Length":  2577
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_windows_production_setup.py",
+        "Length":  586
+    },
+    {
+        "FullName":  "C:\\Users\\FEUCOM\\BK-Security\\tests\\test_windows_response_adapters.py",
+        "Length":  2842
+    }
+]
