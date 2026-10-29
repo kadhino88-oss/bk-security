@@ -22,3 +22,8 @@ __pycache__/
 .env.*
 *.pem
 *.key
+
+# Anciennes sauvegardes manuelles (fichiers ou dossiers) : l historique git suffit
+backup-*
+*.bak
+*.orig
