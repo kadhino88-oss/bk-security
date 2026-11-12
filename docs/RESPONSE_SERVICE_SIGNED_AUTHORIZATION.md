@@ -63,3 +63,7 @@ validation for the state directory, audit file, trust store, IPC key, and named
 pipe, plus an actual VM test, remain deployment gates. Until those gates pass,
 production startup must leave Windows responses disabled. Do not use a
 test-only verifier outside unit tests.
+
+The Windows-hosted Python, Electron, and dashboard regression result is
+recorded in [P0 Windows regression validation](P0_WINDOWS_REGRESSION_VALIDATION_20261112.md).
+It does not close the service-installation or real-adapter validation gates.
