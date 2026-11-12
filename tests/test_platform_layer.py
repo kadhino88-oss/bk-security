@@ -312,9 +312,14 @@ def test_os_response_is_off_by_default_and_uses_the_platform_provider_when_enabl
     monkeypatch.delenv("BK_SECURITY_WINDOWS_RESPONSE", raising=False)
     assert core_module._response_adapters() == {}
     sentinel = {Action.BLOCK: object()}
-    import bk_security.platforms as platforms
-    monkeypatch.setattr(platforms, "current_provider", lambda: SimpleNamespace(response_adapters=lambda: sentinel))
-    monkeypatch.setenv("BK_SECURITY_OS_RESPONSE", "1")
+    if os.name == "nt":
+        import bk_security.services.response_client as response_client
+        monkeypatch.setattr(response_client, "build_remote_adapters", lambda: sentinel)
+        monkeypatch.setenv("BK_SECURITY_WINDOWS_RESPONSE", "1")
+    else:
+        import bk_security.platforms as platforms
+        monkeypatch.setattr(platforms, "current_provider", lambda: SimpleNamespace(response_adapters=lambda: sentinel))
+        monkeypatch.setenv("BK_SECURITY_OS_RESPONSE", "1")
     assert core_module._response_adapters() is sentinel
 
 

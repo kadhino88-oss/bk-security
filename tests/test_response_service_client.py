@@ -1,4 +1,5 @@
 import threading
+import secrets
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
@@ -117,13 +118,20 @@ def test_local_ipc_dry_run_path_covers_approval_execute_and_rollback(tmp_path):
         "approver-a": TrustedSigner("approver-a", "approver", approver_key.public_key()),
         "responder-b": TrustedSigner("responder-b", "responder", responder_key.public_key()),
     }, clock=lambda: 1100)
+    ipc_key_path = tmp_path / "response.key"
+    ipc_key_path.write_text("test-only-response-key-file", encoding="utf-8")
+    trust_store_path = tmp_path / "trust.json"
+    trust_store_path.write_text("[]", encoding="utf-8")
     service = ResponseExecutorService(
         {Action.BLOCK: VerifyingAdapter(Action.BLOCK)},
         state_path=str(tmp_path / "state.db"), audit_path=str(tmp_path / "audit.jsonl"),
         authorization_verifier=verifier,
+        ipc_key_path=str(ipc_key_path), trust_store_path=str(trust_store_path),
+        windows_acl_validator=lambda *_args: True,
     )
-    address = str(tmp_path / "response.sock")
-    key = b"test-only-response-key-0123456789"
+    key = secrets.token_urlsafe(32).encode("ascii")
+    from bk_security.services.protocol import default_address
+    address = default_address(key)
     stop, ready = threading.Event(), threading.Event()
     server = threading.Thread(target=service.serve, args=(address, key, stop, ready), daemon=True)
     server.start()
