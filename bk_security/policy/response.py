@@ -227,7 +227,8 @@ class ResponseEngine:
         return True, ""
 
     def execute(self, execution_id: str, plan_id: str, actor: str, actor_role: str,
-                *, dry_run: bool | None = None, now: datetime | None = None) -> dict:
+                *, dry_run: bool | None = None, authorization_proof: dict | None = None,
+                now: datetime | None = None) -> dict:
         if actor_role != "responder":
             raise PermissionError("Only the responder role can execute a response.")
         previous = self.executions.get(execution_id)
@@ -278,7 +279,14 @@ class ResponseEngine:
                   "executed": False, "status": "failed"}
         try:
             result["execution_attempted"] = True
-            adapter_result = adapter.execute(plan["target"], action, plan["reason"])
+            if getattr(adapter, "requires_independent_authorization", False):
+                approval_evidence = authorization_proof if authorization_proof is not None else plan.get("approval")
+                adapter_result = adapter.execute(
+                    plan["target"], action, plan["reason"], execution_id=execution_id,
+                    approval=deepcopy(approval_evidence),
+                )
+            else:
+                adapter_result = adapter.execute(plan["target"], action, plan["reason"])
             result["result"] = adapter_result
             result["executed"] = True
             verifier = getattr(adapter, "verify", None)
@@ -315,7 +323,8 @@ class ResponseEngine:
         return deepcopy(result)
 
     def rollback(self, execution_id: str, actor: str, actor_role: str,
-                 *, now: datetime | None = None) -> dict:
+                 *, authorization_proof: dict | None = None,
+                 now: datetime | None = None) -> dict:
         if actor_role != "responder":
             raise PermissionError("Only the responder role can roll back a response.")
         execution = self.executions.get(execution_id)
@@ -331,7 +340,10 @@ class ResponseEngine:
         if not adapter:
             return {"execution_id": execution_id, "status": "adapter_not_configured", "verified": False}
         try:
-            rollback_result = adapter.rollback(deepcopy(execution))
+            rollback_context = deepcopy(execution)
+            if authorization_proof is not None:
+                rollback_context["authorization_proof"] = deepcopy(authorization_proof)
+            rollback_result = adapter.rollback(rollback_context)
             verifier = getattr(adapter, "verify_rollback", None)
             verification = verifier(execution, rollback_result) if verifier else {
                 "verified": False, "reason": "rollback_verification_unavailable",

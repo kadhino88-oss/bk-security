@@ -9,6 +9,7 @@ from bk_security.events.models import SecurityAlert, SecurityEvent
 from bk_security.incidents.models import SecurityIncident
 from bk_security.policy.engine import Action
 from bk_security.policy.response import ResponseEngine
+from bk_security.services.response_client import RemoteResponseAdapter
 
 
 class FakeResponseAdapter:
@@ -205,6 +206,44 @@ def test_approved_execution_is_verified_idempotent_and_fully_audited(client):
     assert execute_entry["actor"] == "test-responder"
     assert execute_entry["data"]["evidence_ids"] == [evidence.event_id]
     assert execute_entry["data"]["reason"] == "validated test IOC"
+
+
+def test_api_forwards_independent_service_proof_to_remote_adapter(client):
+    class RemoteRecorder:
+        def __init__(self):
+            self.authorizations = []
+            self.requests = []
+
+        def authorize(self, **scope):
+            self.authorizations.append(scope)
+            return "service-issued-grant"
+
+        def request(self, payload):
+            self.requests.append(payload)
+            if payload["op"] == "execute":
+                return {"ok": True, "result": {"reversible": True}}
+            if payload["op"] == "verify":
+                return {"ok": True, "result": {"verified": True}}
+            raise AssertionError(payload)
+
+    remote = RemoteRecorder()
+    api_module.core.response.adapters[Action.BLOCK] = RemoteResponseAdapter(Action.BLOCK, remote)
+    plan = create_plan(client)
+    assert client.post(
+        f"/api/v1/response/approve/{plan['plan_id']}", headers=headers("approver")
+    ).status_code == 200
+    proof = {"version": 1, "signed": "outside-api"}
+
+    response = client.post(
+        "/api/v1/response/execute", headers=headers("responder"), json={
+            "plan_id": plan["plan_id"], "dry_run": False, "authorization_proof": proof,
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "executed"
+    assert remote.authorizations[0]["approval"] == proof
+    assert remote.requests[0]["authorization_id"] == "service-issued-grant"
 
 
 def test_verification_failure_returns_http_error_and_explicit_degraded_state(client):

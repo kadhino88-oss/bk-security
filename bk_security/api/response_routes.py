@@ -25,6 +25,11 @@ class ResponsePlanRequest(BaseModel):
 class ResponseExecutionRequest(BaseModel):
     plan_id: str = Field(min_length=1, max_length=128)
     dry_run: bool | None = None
+    authorization_proof: dict | None = None
+
+
+class ResponseAuthorizationRequest(BaseModel):
+    authorization_proof: dict | None = None
 
 
 def _raise_for_execution(result: dict) -> None:
@@ -91,13 +96,18 @@ def install(router_app, core, require):
     async def execute(body: ResponseExecutionRequest, p=Depends(require("responder"))):
         result = core.execute_response(
             body.plan_id, body.plan_id, actor=p.username, actor_role=p.role, dry_run=body.dry_run,
+            authorization_proof=body.authorization_proof,
         )
         _raise_for_execution(result)
         return result
 
     @router.post("/rollback/{execution_id}")
-    async def rollback(execution_id: str, p=Depends(require("responder"))):
-        result = core.rollback_response(execution_id, actor=p.username, actor_role=p.role)
+    async def rollback(execution_id: str, body: ResponseAuthorizationRequest | None = None,
+                       p=Depends(require("responder"))):
+        result = core.rollback_response(
+            execution_id, actor=p.username, actor_role=p.role,
+            authorization_proof=body.authorization_proof if body else None,
+        )
         _raise_for_execution(result)
         return result
 

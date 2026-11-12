@@ -55,6 +55,24 @@ def test_isolation_adapter_refuses_remote_host_and_uses_only_local_scope(monkeyp
 
 def test_windows_commands_are_off_by_default_even_on_windows(monkeypatch):
     monkeypatch.setattr(core_module, "os", SimpleNamespace(name="nt", getenv=lambda _name, default="0": default))
-    monkeypatch.setattr(core_module, "build_windows_adapters", lambda: pytest.fail("adapter activation was not requested"))
     core = core_module.SecurityCore()
     assert core.response.adapters == {}
+
+
+def test_windows_response_wiring_uses_remote_service_not_in_process_adapters(monkeypatch):
+    from bk_security.services.response_client import RemoteResponseAdapter
+
+    monkeypatch.setattr(core_module, "os", SimpleNamespace(name="nt", getenv=lambda name, default="0": "1" if name == "BK_SECURITY_WINDOWS_RESPONSE" else default))
+    monkeypatch.setenv("BK_SECURITY_RESPONSE_KEY", "k" * 40)
+    adapters = core_module._response_adapters()
+    assert set(adapters) == {Action.BLOCK, Action.ISOLATE, Action.TERMINATE_PROCESS}
+    assert all(isinstance(adapter, RemoteResponseAdapter) for adapter in adapters.values())
+
+
+def test_generic_os_response_flag_cannot_bypass_windows_service(monkeypatch):
+    from bk_security.services.response_client import RemoteResponseAdapter
+
+    monkeypatch.setattr(core_module, "os", SimpleNamespace(name="nt", getenv=lambda name, default="0": "1" if name == "BK_SECURITY_OS_RESPONSE" else default))
+    monkeypatch.setenv("BK_SECURITY_RESPONSE_KEY", "k" * 40)
+    adapters = core_module._response_adapters()
+    assert all(isinstance(adapter, RemoteResponseAdapter) for adapter in adapters.values())

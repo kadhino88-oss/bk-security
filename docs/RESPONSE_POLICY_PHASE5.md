@@ -54,14 +54,22 @@ change the target.
 
 ## Windows adapters
 
-Windows firewall and process adapters are loaded only when
-BK_SECURITY_WINDOWS_RESPONSE=1 is set explicitly on Windows. This feature does
-not set the variable. Firewall changes use named BK Security rules, bounded
-PowerShell invocations, and state verification. ISOLATE applies an outbound
-firewall rule to the local host only. TERMINATE_PROCESS rejects reserved and
-protected process IDs and is explicitly non-reversible.
+Windows firewall and process adapters belong in the privileged response
+executor. The API process uses an authenticated IPC proxy when
+BK_SECURITY_WINDOWS_RESPONSE=1 is set on Windows; it does not load the direct
+Windows adapters. The IPC request carries the execution ID and approval
+evidence. The privileged service independently verifies distinct Ed25519
+signatures from an approver and responder over the same operation, action,
+target, execution ID, and expiry before issuing a one-use grant. The public IPC
+has no `issue_grant` operation.
 
-The adapters use a 20-second PowerShell timeout. If an operation or verification
-cannot establish the expected state, the recorded status is failed or degraded;
-it is never reported as a verified success. Tests use fake adapters or mocked
-command runners and do not run destructive Windows commands.
+The verifier and public-key trust store must be supplied by privileged-service
+startup; the API's role and approval fields alone are not sufficient. Private
+signing keys stay outside the API process. Production must keep responses
+disabled until public-key provisioning, Windows ACL checks for state/audit/key
+material, service startup and installer wiring, and Windows VM validation are
+complete. Those deployment checks are not established by Linux unit tests.
+Firewall changes use named BK Security rules, bounded PowerShell invocations,
+and state verification. ISOLATE applies an outbound firewall rule to the local
+host only. TERMINATE_PROCESS rejects reserved and protected process IDs and is
+explicitly non-reversible.

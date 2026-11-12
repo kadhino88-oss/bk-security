@@ -9,7 +9,6 @@ from .events.sanitization import sanitize_security_event
 from .detection.risk import RiskEngine
 from .policy.engine import Action, ResponsePolicy
 from .policy.response import ResponseEngine
-from .policy.windows_adapters import build_windows_adapters
 from .incidents import SecurityIncident
 from .incidents.lifecycle import INCIDENT_STATUSES, normalize_incident_status, transition_incident
 from .intelligence import ThreatIntelEngine
@@ -26,9 +25,22 @@ import hashlib
 from uuid import uuid4
 
 def _response_adapters() -> dict:
-    """Response adapters are off unless explicitly enabled; the platform layer picks them per OS."""
-    if os.name == 'nt' and os.getenv('BK_SECURITY_WINDOWS_RESPONSE', '0') == '1':
-        return build_windows_adapters()
+    """Keep response adapters off by default and proxy Windows mutations to the privileged service."""
+    if os.name == 'nt':
+        enabled = (
+            os.getenv('BK_SECURITY_WINDOWS_RESPONSE', '0') == '1'
+            or os.getenv('BK_SECURITY_OS_RESPONSE', '0') == '1'
+        )
+        if not enabled:
+            return {}
+        # Never place privileged Windows OS adapters in the API process. The
+        # remote client can only mutate through the independently verifying service.
+        from .services.protocol import ServiceKeyError
+        from .services.response_client import build_remote_adapters
+        try:
+            return build_remote_adapters()
+        except ServiceKeyError:
+            return {}
     if os.getenv('BK_SECURITY_OS_RESPONSE', '0') == '1':
         from .platforms import current_provider
         return current_provider().response_adapters()
@@ -343,7 +355,8 @@ class SecurityCore:
             return result
 
     def execute_response(self, execution_id: str, plan_id: str, *, actor: str, actor_role: str,
-                         dry_run: bool | None = None) -> dict:
+                         dry_run: bool | None = None,
+                         authorization_proof: dict | None = None) -> dict:
         """Execute a persisted plan using actor-bound approval and verification."""
         if actor_role != "responder":
             raise PermissionError("Only the responder role can execute a response.")
@@ -359,7 +372,10 @@ class SecurityCore:
                 "plan_id": plan_id, "execution_id": execution_id, "action": plan.get("action"),
                 "reason": plan.get("reason"), "evidence_ids": plan.get("evidence_ids", []),
             })
-            result = self.response.execute(execution_id, plan_id, actor, actor_role, dry_run=dry_run)
+            result = self.response.execute(
+                execution_id, plan_id, actor, actor_role, dry_run=dry_run,
+                authorization_proof=authorization_proof,
+            )
             self.store.save_response_action(result)
             self.store.audit(actor, "response_execute", result.get("target"), {
                 "plan_id": plan_id, "execution_id": execution_id, "action": result.get("action"),
@@ -375,13 +391,16 @@ class SecurityCore:
                 })
             return result
 
-    def rollback_response(self, execution_id: str, *, actor: str, actor_role: str) -> dict:
+    def rollback_response(self, execution_id: str, *, actor: str, actor_role: str,
+                          authorization_proof: dict | None = None) -> dict:
         """Attempt rollback and persist the updated execution record when present."""
         if actor_role != "responder":
             raise PermissionError("Only the responder role can roll back a response.")
         with self._state_lock:
             context = self.response.executions.get(execution_id, {})
-            result = self.response.rollback(execution_id, actor, actor_role)
+            result = self.response.rollback(
+                execution_id, actor, actor_role, authorization_proof=authorization_proof,
+            )
             execution = self.response.executions.get(execution_id)
             if execution:
                 self.store.save_response_action(execution)
